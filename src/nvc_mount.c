@@ -34,8 +34,8 @@ static char *mount_ipc(struct error *, const char *, const struct nvc_container 
 static char *mount_procfs(struct error *, const char *, const struct nvc_container *);
 static char *mount_procfs_gpu(struct error *, const char *, const struct nvc_container *, const char *);
 static char *mount_procfs_mig(struct error *, const char *, const struct nvc_container *, const char *);
-static char *mount_sysfs_class(struct error *, const char *, const struct nvc_container *);
-static char *mount_sysfs_gpu(struct error *, const char *, const struct nvc_container *);
+// static char *mount_sysfs_class(struct error *, const char *, const struct nvc_container *);
+// static char *mount_sysfs_gpu(struct error *, const char *, const struct nvc_container *);
 static char *mount_app_profile(struct error *, const struct nvc_container *);
 static int  update_app_profile(struct error *, const struct nvc_container *, dev_t);
 static void unmount(const char *);
@@ -500,73 +500,73 @@ mount_procfs_mig(struct error *err, const char *root, const struct nvc_container
         return (NULL);
 }
 
-static char *
-mount_sysfs_class(struct error *err, const char *root, const struct nvc_container *cnt)
-{
-        char src[PATH_MAX];
-        char dst[PATH_MAX] = {0};
-        char *mnt = NULL;
-        mode_t mode;
+// static char *
+// mount_sysfs_class(struct error *err, const char *root, const struct nvc_container *cnt)
+// {
+//         char src[PATH_MAX];
+//         char dst[PATH_MAX] = {0};
+//         char *mnt = NULL;
+//         mode_t mode;
 
-        if (path_join(err,src,root, XDX_SYS_CLASS_DRM) < 0) 
-                goto fail;
+//         if (path_join(err,src,root, XDX_SYS_CLASS_DRM) < 0) 
+//                 goto fail;
         
-        if (path_resolve_full(err,dst,cnt->cfg.rootfs,XDX_SYS_CLASS_DRM) < 0)
-                goto fail;
+//         if (path_resolve_full(err,dst,cnt->cfg.rootfs,XDX_SYS_CLASS_DRM) < 0)
+//                 goto fail;
 
-        if (file_mode(err,src,&mode) < 0) 
-                goto fail;
+//         if (file_mode(err,src,&mode) < 0) 
+//                 goto fail;
         
-        if (file_create(err,dst,NULL,cnt->uid,cnt->gid,mode) < 0)
-                goto fail;
+//         if (file_create(err,dst,NULL,cnt->uid,cnt->gid,mode) < 0)
+//                 goto fail;
   
-        log_infof("mounting %s at %s", src, dst);
-        if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
-                goto fail;
-        if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
-                goto fail;
-        if ((mnt = xstrdup(err, dst)) == NULL)
-                goto fail;
+//         log_infof("mounting %s at %s", src, dst);
+//         if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
+//                 goto fail;
+//         if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+//                 goto fail;
+//         if ((mnt = xstrdup(err, dst)) == NULL)
+//                 goto fail;
 
-        return (mnt);
- fail:
-        unmount(dst);
-        return (NULL);
-}
+//         return (mnt);
+//  fail:
+//         unmount(dst);
+//         return (NULL);
+// }
 
-static char *
-mount_sysfs_gpu(struct error *err, const char *root, const struct nvc_container *cnt)
-{
-        char src[PATH_MAX];
-        char dst[PATH_MAX] = {0};
-        char *mnt = NULL;
-        mode_t mode;
+// static char *
+// mount_sysfs_gpu(struct error *err, const char *root, const struct nvc_container *cnt)
+// {
+//         char src[PATH_MAX];
+//         char dst[PATH_MAX] = {0};
+//         char *mnt = NULL;
+//         mode_t mode;
 
-        if (path_join(err,src,root, XDX_SYS_PCI) < 0) 
-                goto fail;
+//         if (path_join(err,src,root, XDX_SYS_PCI) < 0) 
+//                 goto fail;
         
-        if (path_resolve_full(err,dst,cnt->cfg.rootfs,XDX_SYS_PCI) < 0)
-                goto fail;
+//         if (path_resolve_full(err,dst,cnt->cfg.rootfs,XDX_SYS_PCI) < 0)
+//                 goto fail;
 
-        if (file_mode(err,src,&mode) < 0) 
-                goto fail;
+//         if (file_mode(err,src,&mode) < 0) 
+//                 goto fail;
         
-        if (file_create(err,dst,NULL,cnt->uid,cnt->gid,mode) < 0)
-                goto fail;
+//         if (file_create(err,dst,NULL,cnt->uid,cnt->gid,mode) < 0)
+//                 goto fail;
   
-        log_infof("mounting %s at %s", src, dst);
-        if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
-                goto fail;
-        if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
-                goto fail;
-        if ((mnt = xstrdup(err, dst)) == NULL)
-                goto fail;
+//         log_infof("mounting %s at %s", src, dst);
+//         if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
+//                 goto fail;
+//         if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+//                 goto fail;
+//         if ((mnt = xstrdup(err, dst)) == NULL)
+//                 goto fail;
 
-        return (mnt);
- fail:
-        unmount(dst);
-        return (NULL);
-}
+//         return (mnt);
+//  fail:
+//         unmount(dst);
+//         return (NULL);
+// }
 
 static char *
 mount_ld_config(struct error *err, const char *root, const struct nvc_container *cnt)
@@ -737,10 +737,10 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
                         goto fail;
         }
         log_infof("--->busid %s",dev->busid);
-        if ((sys_class_mnt = mount_sysfs_class(&ctx->err, ctx->cfg.root, cnt)) == NULL)
-                goto fail;
-        if ((sys_device_mnt = mount_sysfs_gpu(&ctx->err, ctx->cfg.root, cnt))== NULL)
-                goto fail;
+        // if ((sys_class_mnt = mount_sysfs_class(&ctx->err, ctx->cfg.root, cnt)) == NULL)
+        //         goto fail;
+        // if ((sys_device_mnt = mount_sysfs_gpu(&ctx->err, ctx->cfg.root, cnt))== NULL)
+        //         goto fail;
         if ((ld_config_mnt = mount_ld_config(&ctx->err, ctx->cfg.root, cnt))== NULL)
                 goto fail;
         if (cnt->flags & OPT_GRAPHICS_LIBS) {

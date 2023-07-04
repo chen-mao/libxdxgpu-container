@@ -22,10 +22,8 @@
 #include "utils.h"
 #include "xfuncs.h"
 
-#define MAX_BINS (nitems(utility_bins) + \
-                  nitems(compute_bins))
+#define MAX_BINS (nitems(utility_bins))
 #define MAX_LIBS (nitems(dxcore_libs) + \
-                  nitems(ngx_libs) + \
                   nitems(utility_libs) + \
                   nitems(compute_libs) + \
                   nitems(video_libs) + \
@@ -35,14 +33,11 @@ static int select_libraries(struct error *, void *, const char *, const char *, 
 static int select_wsl_libraries(struct error *, void *, const char *, const char *, const char *);
 static int find_library_paths(struct error *, struct dxcore_context *, struct nvc_driver_info *, const char *, const char *, const char * const [], size_t);
 static int find_binary_paths(struct error *, struct dxcore_context*, struct nvc_driver_info *, const char *, const char * const [], size_t);
-// static int find_device_node(struct error *, const char *, const char *, struct nvc_device_node *);
-// static int find_path(struct error *, const char *, const char *, const char *, char **);
 static int lookup_paths(struct error *, struct dxcore_context *, struct nvc_driver_info *, const char *, int32_t, const char *);
 static int lookup_libraries(struct error *, struct dxcore_context *, struct nvc_driver_info *, const char *, int32_t, const char *);
 static int lookup_binaries(struct error *, struct dxcore_context *, struct nvc_driver_info *, const char *, int32_t);
 // static int lookup_firmwares(struct error *, struct dxcore_context *, struct nvc_driver_info *, const char *, int32_t);
 static int lookup_devices(struct error *, struct dxcore_context *, struct nvc_driver_info *, const char *, int32_t);
-// static int lookup_ipcs(struct error *, struct nvc_driver_info *, const char *, int32_t);
 static int fill_mig_device_info(struct nvc_context *, bool mig_enabled, struct driver_device *, struct nvc_device *);
 static void clear_mig_device_info(struct nvc_mig_device_info *);
 
@@ -58,11 +53,6 @@ static void clear_mig_device_info(struct nvc_mig_device_info *);
 
 static const char * const utility_bins[] = {
         "xdxsmi",
-};
-
-static const char * const compute_bins[] = {
-        "nvidia-cuda-mps-control",          /* Multi process service CLI */
-        "nvidia-cuda-mps-server",           /* Multi process service server */
 };
 
 static const char * const utility_libs[] = {
@@ -101,29 +91,6 @@ static const char * const graphics_libs[] = {
         "libdri_xdxgpu.so",
         "libdrm_xdxgpu.so",
         "xdxgpu_dri.so",
-};
-
-// static const char * const graphics_libs_glvnd[] = {
-//         //"libGLX.so",                      /* GLX ICD loader */
-//         //"libOpenGL.so",                   /* OpenGL ICD loader */
-//         //"libGLdispatch.so",               /* OpenGL dispatch (used by libOpenGL, libEGL and libGLES*) */
-//         "libGLX_nvidia.so",                 /* OpenGL/GLX ICD */
-//         "libEGL_nvidia.so",                 /* EGL ICD */
-//         "libGLESv2_nvidia.so",              /* OpenGL ES v2 ICD */
-//         "libGLESv1_CM_nvidia.so",           /* OpenGL ES v1 common profile ICD */
-//         "libnvidia-glvkspirv.so",           /* SPIR-V Lib for Vulkan */
-//         "libnvidia-cbl.so",                 /* VK_NV_ray_tracing */
-// };
-
-// static const char * const graphics_libs_compat[] = {
-//         "libGL.so",                         /* OpenGL/GLX legacy _or_ compatibility wrapper (GLVND) */
-//         "libEGL.so",                        /* EGL legacy _or_ ICD loader (GLVND) */
-//         "libGLESv1_CM.so",                  /* OpenGL ES v1 common profile legacy _or_ ICD loader (GLVND) */
-//         "libGLESv2.so",                     /* OpenGL ES v2 legacy _or_ ICD loader (GLVND) */
-// };
-
-static const char * const ngx_libs[] = {
-        "libnvidia-ngx.so",                 /* NGX library */
 };
 
 static const char * const dxcore_libs[] = {
@@ -321,31 +288,6 @@ find_binary_paths(struct error *err, struct dxcore_context* dxcore, struct nvc_d
 //         return (-1);
 // }
 
-// find_path resolves a path relative to the specified root. If the path exists, the
-// output buffer is populated with the resolved path not including the root. A `tag` parameter is
-// provided to control logging output.
-// static int
-// find_path(struct error *err, const char *tag, const char *root, const char *target, char **buf)
-// {
-//         char path[PATH_MAX];
-//         int ret;
-
-//         if (path_resolve(err, path, root, target) < 0)
-//                 return (-1);
-//         if ((ret = file_exists_at(err, root, path)) < 0)
-//                 return (-1);
-//         if (ret) {
-//                 log_infof("listing %s path %s", tag, path);
-//                 if ((*buf = xstrdup(err, path)) == NULL) {
-//                         log_err("error creating output buffer");
-//                         return (-1);
-//                 }
-//         } else {
-//                 log_warnf("missing %s path %s", tag, target);
-//         }
-//         return (0);
-// }
-
 static int
 lookup_paths(struct error *err, struct dxcore_context *dxcore, struct nvc_driver_info *info, const char *root, int32_t flags, const char *ldcache)
 {  
@@ -375,13 +317,8 @@ lookup_libraries(struct error *err, struct dxcore_context *dxcore, struct nvc_dr
 
         ptr = array_append(ptr, utility_libs, nitems(utility_libs));
         ptr = array_append(ptr, compute_libs, nitems(compute_libs));
-        // ptr = array_append(ptr, ngx_libs, nitems(ngx_libs));
         ptr = array_append(ptr, video_libs, nitems(video_libs));
         ptr = array_append(ptr, graphics_libs, nitems(graphics_libs));
-        // if (flags & OPT_NO_GLVND)
-        //         ptr = array_append(ptr, graphics_libs_compat, nitems(graphics_libs_compat));
-        // else
-        //         ptr = array_append(ptr, graphics_libs_glvnd, nitems(graphics_libs_glvnd));
 
         if (dxcore->initialized)
                 ptr = array_append(ptr, dxcore_libs, nitems(dxcore_libs));
@@ -409,8 +346,6 @@ lookup_binaries(struct error *err, struct dxcore_context* dxcore, struct nvc_dri
         const char **ptr = bins;
 
         ptr = array_append(ptr, utility_bins, nitems(utility_bins));
-        // if (!(flags & OPT_NO_MPS))
-        //         ptr = array_append(ptr, compute_bins, nitems(compute_bins));
 
         if (find_binary_paths(err, dxcore, info, root, bins, (size_t)(ptr - bins)) < 0)
                 return (-1);
@@ -554,35 +489,6 @@ lookup_devices(struct error *err, struct dxcore_context *dxcore, struct nvc_driv
                 log_infof("listing device %s", info->devs[i].path);
         return (0);
 }
-
-// static int
-// lookup_ipcs(struct error *err, struct nvc_driver_info *info, const char *root, int32_t flags)
-// {
-//         char **ptr;nvc_device
-//         const char *mps;
-
-//         info->nipcs = 3;
-//         info->ipcs = ptr = array_new(err, info->nipcs);
-//         if (info->ipcs == NULL)
-//                 return (-1);
-
-//         if (!(flags & OPT_NO_PERSISTENCED)) {
-//                 if (find_path(err, "ipc", root, NV_PERSISTENCED_SOCKET, ptr++) < 0)
-//                         return (-1);
-//         }
-//         if (!(flags & OPT_NO_FABRICMANAGER)) {
-//                 if (find_path(err, "ipc", root, NV_FABRICMANAGER_SOCKET, ptr++) < 0)
-//                         return (-1);
-//         }
-//         if (!(flags & OPT_NO_MPS)) {
-//                 if ((mps = secure_getenv("CUDA_MPS_PIPE_DIRECTORY")) == NULL)
-//                         mps = NV_MPS_PIPE_DIR;
-//                 if (find_path(err, "ipc", root, mps, ptr++) < 0)
-//                         return (-1);
-//         }
-//         array_pack(info->ipcs, &info->nipcs);
-//         return (0);
-// }
 
 static int
 fill_mig_device_info(struct nvc_context *ctx, bool mig_enabled, struct driver_device *drv_device, struct nvc_device *device)
@@ -753,8 +659,6 @@ match_binary_flags(const char *bin, int32_t flags)
 {
         if ((flags & OPT_UTILITY_BINS) && str_array_match_prefix(bin, utility_bins, nitems(utility_bins)))
                 return (true);
-        if ((flags & OPT_COMPUTE_BINS) && str_array_match_prefix(bin, compute_bins, nitems(compute_bins)))
-                return (true);
         return (false);
 }
 
@@ -774,8 +678,6 @@ match_library_flags(const char *lib, int32_t flags)
         // if ((flags & OPT_GRAPHICS_LIBS) && (str_array_match_prefix(lib, graphics_libs, nitems(graphics_libs)) ||
         //     str_array_match_prefix(lib, graphics_libs_glvnd, nitems(graphics_libs_glvnd)) ||
         //     str_array_match_prefix(lib, graphics_libs_compat, nitems(graphics_libs_compat))))
-        //         return (true);
-        // if ((flags & OPT_NGX_LIBS) && str_array_match_prefix(lib, ngx_libs, nitems(ngx_libs)))
         //         return (true);
         return (false);
 }
