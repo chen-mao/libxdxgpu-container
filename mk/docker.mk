@@ -24,7 +24,7 @@ WITH_TIRPC   ?= no
 WITH_SECCOMP ?= yes
 
 DOCKER       ?= docker
-LIB_NAME     ?= libnvidia-container
+LIB_NAME     ?= libxdxct-container
 PLATFORM     ?= $(shell uname -m)
 
 DIST_DIR     ?= $(CURDIR)/dist
@@ -145,7 +145,7 @@ docker-amd64-verify: $(patsubst %, %-verify, $(AMD64_TARGETS)) \
 
 docker-build-%: $(ARTIFACTS_DIR)
 	@echo "Building for $(TARGET_PLATFORM)"
-	$(DOCKER) pull --platform=linux/$(ARCH) $(BASEIMAGE)
+	$(DOCKER) pull --platform=linux/$(ARCH) 172.18.25.248:5000/xdxgpu/mchen-compile-ubuntu:20.04
 	DOCKER_BUILDKIT=1 \
 	$(DOCKER) build \
 	    --platform=linux/$(ARCH) \
@@ -177,7 +177,7 @@ docker-verify-%: %
 	    --runtime=nvidia  \
 	    -e NVIDIA_VISIBLE_DEVICES=all \
 	    --rm $(BUILDIMAGE) \
-	    bash -c "make install; LD_LIBRARY_PATH=/usr/local/lib/  nvidia-container-cli -k -d /dev/tty info"
+	    bash -c "make install; LD_LIBRARY_PATH=/usr/local/lib/  libxdxct-container -k -d /dev/tty info"
 
 docker-clean:
 	IMAGES=$$(docker images "nvidia/$(LIB_NAME)/*" --format="{{.ID}}"); \

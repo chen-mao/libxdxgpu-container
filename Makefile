@@ -123,8 +123,8 @@ ifneq ($(VERSION_STRING),$(VERSION)$(if $(TAG),-$(TAG),))
 $(error Version not updated correctly: $(VERSION_STRING) != $(VERSION)$(if $(TAG),-$(TAG),))
 endif
 
-BIN_NAME    := xdxgpu-container-cli
-LIB_NAME    := libxdxgpu-container
+BIN_NAME    := xdxct-container-cli
+LIB_NAME    := libxdxct-container
 LIB_STATIC  := $(LIB_NAME).a
 LIB_SHARED  := $(LIB_NAME).so.$(VERSION)
 LIB_SONAME  := $(LIB_NAME).so.$(MAJOR)

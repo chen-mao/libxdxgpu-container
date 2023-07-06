@@ -35,7 +35,9 @@ static char *mount_procfs(struct error *, const char *, const struct nvc_contain
 static char *mount_procfs_gpu(struct error *, const char *, const struct nvc_container *, const char *);
 static char *mount_procfs_mig(struct error *, const char *, const struct nvc_container *, const char *);
 // static char *mount_sysfs_class(struct error *, const char *, const struct nvc_container *);
+static char *mount_pcie(struct error *, const char *, const struct nvc_container *);
 // static char *mount_sysfs_gpu(struct error *, const char *, const struct nvc_container *);
+static char *mount_ld_config(struct error *, const char *, const struct nvc_container *);
 static char *mount_app_profile(struct error *, const struct nvc_container *);
 static int  update_app_profile(struct error *, const struct nvc_container *, dev_t);
 static void unmount(const char *);
@@ -214,11 +216,16 @@ mount_device(struct error *err, const char *root, const struct nvc_container *cn
         mode_t mode;
         char *mnt;
 
-        char *dev_mnt = dirname(dev->path);
-        if (path_join(err, src, root, dev_mnt) < 0)
+        if (path_join(err, src, root, dev->path) < 0)
                 return (NULL);
-        if (path_resolve_full(err, dst, cnt->cfg.rootfs, dev_mnt) < 0)
+        if (path_resolve_full(err, dst, cnt->cfg.rootfs, dev->path) < 0)
                 return (NULL);
+        if (xstat(err, src, &s) < 0)
+                return (NULL);
+        if (s.st_rdev != dev->id) {
+                error_setx(err, "invalid device node: %s", src);
+                return (NULL);
+        }
         if (file_mode(err, src, &mode) < 0)
                 return (NULL);
         if (file_create(err, dst, NULL, cnt->uid, cnt->gid, mode) < 0)
@@ -500,39 +507,73 @@ mount_procfs_mig(struct error *err, const char *root, const struct nvc_container
         return (NULL);
 }
 
-// static char *
-// mount_sysfs_class(struct error *err, const char *root, const struct nvc_container *cnt)
-// {
-//         char src[PATH_MAX];
-//         char dst[PATH_MAX] = {0};
-//         char *mnt = NULL;
-//         mode_t mode;
+static char *
+mount_pcie(struct error *err, const char *root, const struct nvc_container *cnt)
+{
+        char src[PATH_MAX];
+        char dst[PATH_MAX] = {0};
+        char *mnt = NULL;
+        mode_t mode;
 
-//         if (path_join(err,src,root, XDX_SYS_CLASS_DRM) < 0) 
-//                 goto fail;
+        if (path_join(err,src,root, XDX_SYS_CLASS_DRM) < 0) 
+                goto fail;
         
-//         if (path_resolve_full(err,dst,cnt->cfg.rootfs,XDX_SYS_CLASS_DRM) < 0)
-//                 goto fail;
+        if (path_resolve_full(err,dst,cnt->cfg.rootfs,XDX_SYS_CLASS_DRM) < 0)
+                goto fail;
 
-//         if (file_mode(err,src,&mode) < 0) 
-//                 goto fail;
+        if (file_mode(err,src,&mode) < 0) 
+                goto fail;
         
-//         if (file_create(err,dst,NULL,cnt->uid,cnt->gid,mode) < 0)
-//                 goto fail;
+        if (file_create(err,dst,NULL,cnt->uid,cnt->gid,mode) < 0)
+                goto fail;
+
+        log_infof("mounting %s at %s", src, dst);
+        if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
+                goto fail;
+        if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+                goto fail;
+        if ((mnt = xstrdup(err, dst)) == NULL)
+                goto fail;
+
+        return (mnt);
+        fail:
+                unmount(dst);
+                return (NULL);    
+}
+
+static char *
+mount_sysfs_class(struct error *err, const char *root, const struct nvc_container *cnt)
+{
+        char src[PATH_MAX];
+        char dst[PATH_MAX] = {0};
+        char *mnt = NULL;
+        mode_t mode;
+
+        if (path_join(err,src,root, XDX_SYS_CLASS_DRM) < 0) 
+                goto fail;
+        
+        if (path_resolve_full(err,dst,cnt->cfg.rootfs,XDX_SYS_CLASS_DRM) < 0)
+                goto fail;
+
+        if (file_mode(err,src,&mode) < 0) 
+                goto fail;
+        
+        if (file_create(err,dst,NULL,cnt->uid,cnt->gid,mode) < 0)
+                goto fail;
   
-//         log_infof("mounting %s at %s", src, dst);
-//         if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
-//                 goto fail;
-//         if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
-//                 goto fail;
-//         if ((mnt = xstrdup(err, dst)) == NULL)
-//                 goto fail;
+        log_infof("mounting %s at %s", src, dst);
+        if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
+                goto fail;
+        if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+                goto fail;
+        if ((mnt = xstrdup(err, dst)) == NULL)
+                goto fail;
 
-//         return (mnt);
-//  fail:
-//         unmount(dst);
-//         return (NULL);
-// }
+        return (mnt);
+ fail:
+        unmount(dst);
+        return (NULL);
+}
 
 // static char *
 // mount_sysfs_gpu(struct error *err, const char *root, const struct nvc_container *cnt)
@@ -579,7 +620,7 @@ mount_ld_config(struct error *err, const char *root, const struct nvc_container 
         if (path_join(err,src,root, XDX_LD_CONFIG) < 0) 
                 goto fail;
 
-        if (path_resolve_full(err,dst,cnt->cfg.rootfs, dirname(XDX_LD_CONFIG)) < 0)
+        if (path_resolve_full(err,dst,cnt->cfg.rootfs, XDX_LD_CONFIG) < 0)
                 goto fail;
 
         if (file_mode(err,src,&mode) < 0) 
@@ -720,8 +761,7 @@ static int
 device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, const struct nvc_device *dev)
 {
         char *dev_mnt = NULL;
-        char *sys_class_mnt = NULL;
-        char *sys_device_mnt = NULL;
+        char *pci_mnt = NULL;
         char *ld_config_mnt = NULL;
         const char **tmp;
 
@@ -737,8 +777,8 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
                         goto fail;
         }
         log_infof("--->busid %s",dev->busid);
-        // if ((sys_class_mnt = mount_sysfs_class(&ctx->err, ctx->cfg.root, cnt)) == NULL)
-        //         goto fail;
+        if ((pci_mnt = mount_pcie(&ctx->err, ctx->cfg.root, cnt)) == NULL)
+                goto fail;
         // if ((sys_device_mnt = mount_sysfs_gpu(&ctx->err, ctx->cfg.root, cnt))== NULL)
         //         goto fail;
         if ((ld_config_mnt = mount_ld_config(&ctx->err, ctx->cfg.root, cnt))== NULL)
@@ -757,13 +797,11 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
                 if (setup_device_cgroup(&ctx->err, cnt, dev->node.id) < 0)
                         goto fail;
         }
-
         rv = 0;
 
  fail:
         if (rv < 0) {
-                unmount(sys_class_mnt);
-                unmount(sys_device_mnt);
+                unmount(pci_mnt);
                 unmount(ld_config_mnt);
                 unmount(dev_mnt);
         }
@@ -934,7 +972,6 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
 
         /* Device mounts */
         log_infof("info->ndevs: %d", info->ndevs);
-        log_infof("start set device cgroup: %s", info->devs[0].path);
         for (size_t i = 0; i < info->ndevs; ++i) {
                 /* On WSL2 we only mount the /dev/dxg device and as such these checks are not applicable. */
                 if (!ctx->dxcore.initialized) {
@@ -945,10 +982,11 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                         if (!(cnt->flags & OPT_DISPLAY) && minor(info->devs[i].id) == NV_MODESET_DEVICE_MINOR)
                                 continue;
                 }
-                // if (!(cnt->flags & OPT_NO_DEVBIND)) {
-                //         if ((*ptr++ = mount_device(&ctx->err, ctx->cfg.root, cnt, &info->devs[i])) == NULL)
-                //                 goto fail;
-                // }
+                if (!(cnt->flags & OPT_NO_DEVBIND)) {
+                        log_infof("start set device cgroup: %s", info->devs[0].path);
+                        if ((*ptr++ = mount_device(&ctx->err, ctx->cfg.root, cnt, &info->devs[i])) == NULL)
+                                goto fail;
+                }
                 if (!(cnt->flags & OPT_NO_CGROUPS)) {
                         log_infof("start set device cgroup: %s", info->devs[i].path);
                         if (setup_device_cgroup(&ctx->err, cnt, info->devs[i].id) < 0)

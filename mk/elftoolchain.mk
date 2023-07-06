@@ -34,8 +34,10 @@ export CFLAGS   := -O2 -g -fdata-sections -ffunction-sections -fstack-protector 
 
 $(SRCS_DIR)/.download_stamp:
 	$(MKDIR) -p $(SRCS_DIR)
-	$(CURL) --progress-bar -fSL $(URL) | \
-	$(TAR) -C $(SRCS_DIR) --strip-components=1 -xj $(addprefix $(PREFIX)/,mk common libelf)
+	ls /tmp/libxdxct-container
+#   $(CURL) --progress-bar -fSL $(URL) | \
+#   $(TAR) -C $(SRCS_DIR) --strip-components=1 -xj $(addprefix $(PREFIX)/,mk common libelf)
+	$(TAR) -xvf /tmp/libxdxct-container/$(PREFIX).tar.bz2 -C $(SRCS_DIR) --strip-components=1 -xj $(addprefix $(PREFIX)/,mk common libelf)
 	$(CP) $(MAKE_DIR)/native-elf-format $(COMMON)
 	@touch $@
 

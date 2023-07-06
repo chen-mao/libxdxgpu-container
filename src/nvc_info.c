@@ -269,25 +269,6 @@ find_binary_paths(struct error *err, struct dxcore_context* dxcore, struct nvc_d
         return (rv);
 }
 
-// static int
-// find_device_node(struct error *err, const char *root, const char *dev, struct nvc_device_node *node)
-// {
-//         char path[PATH_MAX];
-//         struct stat s;
-
-//         if (path_resolve_full(err, path, root, dev) < 0)
-//                 return (-1);
-//         if (xstat(err, path, &s) == 0) {
-//                 *node = (struct nvc_device_node){(char *)dev, s.st_rdev};
-//                 return (true);
-//         }
-//         if (err->code == ENOENT) {
-//                 log_warnf("missing device %s", dev);
-//                 return (false);
-//         }
-//         return (-1);
-// }
-
 static int
 lookup_paths(struct error *err, struct dxcore_context *dxcore, struct nvc_driver_info *info, const char *root, int32_t flags, const char *ldcache)
 {  
@@ -434,11 +415,8 @@ lookup_devices(struct error *err, struct dxcore_context *dxcore, struct nvc_driv
 {
         // struct nvc_device_node uvm, uvm_tools, modeset, nvidiactl, dxg, *node;
         int has_dxg = 0;
-        struct nvc_device_node nvidiactl, *node, dxg;
-        int has_nvidiactl = 0;
-        // int has_uvm = 0;
-        // int has_uvm_tools = 0;
-        // int has_modeset = 0;
+        struct nvc_device_node render, *node, dxg;
+        int has_render = 0;
 
         if (dxcore->initialized) {
                 struct stat dxgDeviceStat;
@@ -453,37 +431,20 @@ lookup_devices(struct error *err, struct dxcore_context *dxcore, struct nvc_driv
                 has_dxg = 1;
         }
         else {
-                // if (!(flags & OPT_NO_UVM)) {
-                //         if ((has_uvm = find_device_node(err, root, NV_UVM_DEVICE_PATH, &uvm)) < 0)
-                //                 return (-1);
-                //         if ((has_uvm_tools = find_device_node(err, root, NV_UVM_TOOLS_DEVICE_PATH, &uvm_tools)) < 0)
-                //                 return (-1);
-                // }
-                // if (!(flags & OPT_NO_MODESET)) {
-                //         modeset.path = (char *)NV_MODESET_DEVICE_PATH;
-                //         modeset.id = makedev(NV_DEVICE_MAJOR, NV_MODESET_DEVICE_MINOR);
-                //         has_modeset = 1;
-                // }
-                nvidiactl.path = (char *)NV_CTL_DEVICE_PATH;
-                nvidiactl.id = makedev(NV_DEVICE_MAJOR, NV_CTL_DEVICE_MINOR);
-                has_nvidiactl = 1;
+                render.path = (char *)XDX_RENDER_DEVICE_PATH;
+                render.id = makedev(NV_DEVICE_MAJOR, XDX_RENDER_DEVICE_MINOR);
+                has_render = 1;
         }
 
-        info->ndevs = (size_t)(has_nvidiactl);
+        info->ndevs = (size_t)(has_render);
         info->devs = node = xcalloc(err, info->ndevs, sizeof(*info->devs));
         if (info->devs == NULL)
                 return (-1);
 
         if (has_dxg)
                 *(node++) = dxg;
-        if (has_nvidiactl)
-                *(node++) = nvidiactl;
-        // if (has_uvm)
-        //         *(node++) = uvm;
-        // if (has_uvm_tools)
-        //         *(node++) = uvm_tools;
-        // if (has_modeset)
-        //         *(node++) = modeset;
+        if (has_render)
+                *(node++) = render;
 
         for (size_t i = 0; i < info->ndevs; ++i)
                 log_infof("listing device %s", info->devs[i].path);
@@ -675,10 +636,6 @@ match_library_flags(const char *lib, int32_t flags)
                 return (true);
         if ((flags & OPT_GRAPHICS_LIBS) && str_array_match_prefix(lib, graphics_libs, nitems(graphics_libs)))
                 return (true);
-        // if ((flags & OPT_GRAPHICS_LIBS) && (str_array_match_prefix(lib, graphics_libs, nitems(graphics_libs)) ||
-        //     str_array_match_prefix(lib, graphics_libs_glvnd, nitems(graphics_libs_glvnd)) ||
-        //     str_array_match_prefix(lib, graphics_libs_compat, nitems(graphics_libs_compat))))
-        //         return (true);
         return (false);
 }
 
@@ -698,7 +655,6 @@ nvc_driver_info_new(struct nvc_context *ctx, const char *opts)
         log_infof("requesting driver information with '%s'", opts);
         if ((info = xcalloc(&ctx->err, 1, sizeof(*info))) == NULL)
                 return (NULL);
-
         // if (driver_get_rm_version(&ctx->err, &info->nvrm_version) < 0)
         //         goto fail;
         // if (driver_get_cuda_version(&ctx->err, &info->cuda_version) < 0)

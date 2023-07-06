@@ -25,13 +25,14 @@
 
 #define SONAME_LIBCUDA  "libcuda.so.1"
 #define SONAME_LIBNVML  "libxdxgpu-ml.so"
-#define SONAME_LIBNVCGO "libnvidia-container-go.so.1"
+#define SONAME_LIBNVCGO "libxdxct-container-go.so.1"
 
 #define NV_DEVICE_MAJOR          226
-#define NV_CTL_DEVICE_MINOR      128
+#define XDX_RENDER_DEVICE_MINOR  128
 #define NV_MODESET_DEVICE_MINOR  254
 #define NV_DEVICE_PATH           "/dev/dri/card%d"
-#define NV_CTL_DEVICE_PATH       "/dev/dri/renderD128"
+#define XDX_RENDER_DEVICE_PATH   "/dev/dri/renderD128"
+#define NV_CTL_DEVICE_PATH       _PATH_DEV "nvidiactl"
 #define NV_UVM_DEVICE_PATH       _PATH_DEV "nvidia-uvm"
 #define NV_UVM_TOOLS_DEVICE_PATH _PATH_DEV "nvidia-uvm-tools"
 #define NV_MODESET_DEVICE_PATH   _PATH_DEV "nvidia-modeset"
@@ -48,7 +49,7 @@
 #define XDX_SYS_CLASS_DRM        "/sys/class/drm"
 #define XDX_SYS_PCI              "/sys/devices/pci0000:00"
 #define XDX_LIB_DRI              "/usr/lib/x86_64-linux-gnu/dri"
-#define XDX_LD_CONFIG            "/etc/ld.so.conf.d/20-xdxgpu.conf"
+#define XDX_LD_CONFIG            "/etc/ld.so.conf.d"
 #define NV_PROC_DRIVER_CAPS    NV_PROC_DRIVER "/capabilities"
 #define NV_MIG_CAPS_PATH       NV_PROC_DRIVER_CAPS "/mig"
 #define NV_GPU_CAPS_PATH       NV_PROC_DRIVER_CAPS "/gpu%d"

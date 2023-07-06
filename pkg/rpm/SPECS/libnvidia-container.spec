@@ -1,20 +1,20 @@
-Name: libnvidia-container
+Name: libxdxct-container
 License:        BSD-3-Clause AND Apache-2.0 AND GPL-3.0-or-later AND LGPL-3.0-or-later AND MIT AND GPL-2.0-only
 # elftoolchain is licensed under BSD-3-Clause
 #  https://github.com/elftoolchain/elftoolchain#copyright-and-license
-# libnvidia-container is licensed under apache-2.0
-#  https://github.com/NVIDIA/libnvidia-container/blob/main/LICENSE
-# libnvidia-container includes the GPLv3 license
-#  https://github.com/NVIDIA/libnvidia-container/blob/main/COPYING
-# libnvidia-container includes the LGPLv3 license
-#  https://github.com/NVIDIA/libnvidia-container/blob/main/COPYING.LESSER
+# libxdxct-container is licensed under apache-2.0
+#  https://github.com/NVIDIA/libxdxct-container/blob/main/LICENSE
+# libxdxct-container includes the GPLv3 license
+#  https://github.com/NVIDIA/libxdxct-container/blob/main/COPYING
+# libxdxct-container includes the LGPLv3 license
+#  https://github.com/NVIDIA/libxdxct-container/blob/main/COPYING.LESSER
 # nvidia-modprobe is licensed under GPLv2
 #  https://github.com/NVIDIA/nvidia-modprobe/blob/main/COPYING
 # several nvidia-modprobe files contain the MIT license header
 #  https://github.com/NVIDIA/nvidia-modprobe/blob/main/utils.mk
 Vendor: NVIDIA CORPORATION
 Packager: NVIDIA CORPORATION <cudatools@nvidia.com>
-URL: https://github.com/NVIDIA/libnvidia-container
+URL: https://github.com/NVIDIA/libxdxct-container
 BuildRequires: make
 %{!?_tag: %define _version_tag %{_version}}
 %{?_tag: %define _version_tag %{_version}~%{_tag}}
@@ -194,7 +194,7 @@ This package contains command-line tools that facilitate using the library.
 * Wed Dec 08 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 1.8.0-0.1.rc.1
 - Add new cgroup.c file based on nvcgo that supports both cgroupv1 and cgroupv2
 - Move cgroup.c to cgroup_legacy.c in preparation for nvcgo implementation
-- Install libnvidia-container-go.so from deps directory
+- Install libxdxct-container-go.so from deps directory
 - Fix DESTDIR for deps make target
 - Create a go-shared library called nvcgo and wrap it in an RPC service
 - Cleanup the nvc_shutdown() path when there is an error in RPC services
@@ -210,10 +210,10 @@ This package contains command-line tools that facilitate using the library.
 - Add replacement for versions in debian symbol file
 
 * Thu Nov 25 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 1.7.0-0.1.rc.1
-- On Ubuntu18.04 arm64 platforms libnvidia-container-tools depends on both libnvidia-container0 and libnvidia-container1 to support Jetson
-- Filter command line options based on libnvidia-container library version
-- Include libnvidia-container version in CLI version output
-- Allow for nvidia-container-cli to load libnvidia-container.so.0 dynamically on Jetson platforms
+- On Ubuntu18.04 arm64 platforms libxdxct-container-tools depends on both libxdxct-container0 and libxdxct-container1 to support Jetson
+- Filter command line options based on libxdxct-container library version
+- Include libxdxct-container version in CLI version output
+- Allow for libxdxct-container to load libxdxct-container.so.0 dynamically on Jetson platforms
 
 * Wed Nov 17 2021 NVIDIA CORPORATION <cudatools@nvidia.com> 1.6.0-1
 - Promote 1.6.0-0.1.rc.3 to 1.6.0-1
@@ -379,7 +379,7 @@ This package contains command-line tools that facilitate using the library.
 - d268f8f Improve error message if driver installed in the container
 - 3fdac29 Add optional support for libelf from the elfutils project
 - 584bca5 Remove top directory bind mounts to prevent EXDEV errors
-- c6dc820 Add info command to nvidia-container-cli
+- c6dc820 Add info command to libxdxct-container
 - 44b74ee Add device model to the device informations
 - cbdd58f Strip RPC prefix from error messages
 - d4ee216 Rework the CLI list command
