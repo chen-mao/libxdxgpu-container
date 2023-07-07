@@ -74,6 +74,16 @@ xstat(struct error *err, const char *path, struct stat *buf)
         return (rv);
 }
 
+static inline int
+xlstat(struct error *err, const char *path, struct stat *buf)
+{
+        int rv;
+
+        if ((rv = lstat(path, buf)) < 0)
+                error_set(err, "stat failed: %s", path);
+        return (rv);
+}
+
 static inline FILE *
 xfopen(struct error *err, const char *path, const char *mode)
 {
