@@ -568,7 +568,7 @@ symlink_pcie(struct error *err, const struct nvc_container *cnt, char link_path[
         }
         if (path_resolve_full(err, link_dst_dir, cnt->cfg.rootfs, link_dir) < 0)
                 goto fail;
-        if (file_mode(err, link_dst_dir, &mode) < 0) 
+        if (file_mode(err, link_dir, &mode) < 0) 
                 goto fail;
         if (file_create(err, link_dst_dir, NULL, cnt->uid, cnt->gid, mode) < 0)
                 goto fail;

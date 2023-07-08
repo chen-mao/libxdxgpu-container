@@ -1,4 +1,4 @@
-libxdxct-container (1.14.0~rc.1-1) experimental; urgency=medium
+libxdxct-container (1.0.0~rc.1-0) experimental; urgency=medium
 
   * Remove linvidia-container0 dependency on Ubuntu-based arm64 platforms
 
