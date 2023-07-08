@@ -652,10 +652,10 @@ mount_ld_config(struct error *err, const char *root, const struct nvc_container 
         char *mnt = NULL;
         mode_t mode;
 
-        if (path_join(err,src,root, XDX_LD_CONFIG) < 0) 
+        if (path_join(err,src,root, LD_CONFIG) < 0) 
                 goto fail;
 
-        if (path_resolve_full(err,dst,cnt->cfg.rootfs, XDX_LD_CONFIG) < 0)
+        if (path_resolve_full(err,dst,cnt->cfg.rootfs, LD_CONFIG) < 0)
                 goto fail;
 
         if (file_mode(err,src,&mode) < 0) 
@@ -800,6 +800,7 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
         char *ld_config_mnt = NULL;
         const char **tmp;
 
+        // to do, support arm  
         char *dri_libs[] = {
                 "/usr/lib/x86_64-linux-gnu/dri/xdxgpu_dri.so",
                 "/usr/lib/x86_64-linux-gnu/dri/xdxgpu_drv_video.la",

@@ -49,7 +49,7 @@
 #define XDX_SYS_CLASS_DRM        "/sys/class/drm"
 #define XDX_SYS_PCI              "/sys/devices/pci0000:00"
 #define XDX_LIB_DRI              "/usr/lib/x86_64-linux-gnu/dri"
-#define XDX_LD_CONFIG            "/etc/ld.so.conf.d"
+#define LD_CONFIG            "/etc/ld.so.conf.d"
 #define NV_PROC_DRIVER_CAPS    NV_PROC_DRIVER "/capabilities"
 #define NV_MIG_CAPS_PATH       NV_PROC_DRIVER_CAPS "/mig"
 #define NV_GPU_CAPS_PATH       NV_PROC_DRIVER_CAPS "/gpu%d"
