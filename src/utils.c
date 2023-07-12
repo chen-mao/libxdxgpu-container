@@ -554,7 +554,6 @@ file_create(struct error *err, const char *path, const char *data, uid_t uid, gi
         } else if (S_ISLNK(mode)) {
                 if (data == NULL) {
                         errno = EINVAL;
-                        printf("----------> data is null");
                         goto fail;
                 }
                 if (symlink(data, path) < 0 && errno != EEXIST)

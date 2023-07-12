@@ -42,7 +42,7 @@ DESTDIR=/path/to/root make install prefix=/usr
 
 ## Using the library
 ### Container runtime example
-Refer to the [nvidia-container-runtime](https://github.com/NVIDIA/nvidia-container-runtime) project.
+Refer to the [xdxct-container-runtime](https://github.com/NVIDIA/xdxct-container-runtime) project.
 
 ### Command line example
 
