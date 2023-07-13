@@ -72,6 +72,7 @@ int  file_remove(struct error *, const char *);
 int  file_exists(struct error *, const char *);
 int  file_exists_at(struct error *, const char *, const char *);
 int  file_mode(struct error *, const char *, mode_t *);
+int  file_mode_link(struct error *, const char *, mode_t *);
 int  file_read_line(struct error *, const char *, char *, size_t);
 int  file_read_text(struct error *, const char *, char **);
 int  file_read_uint32(struct error *, const char *, uint32_t *);
@@ -85,5 +86,5 @@ int path_resolve_full(struct error *, char *, const char *, const char *);
 int perm_drop_privileges(struct error *, uid_t, gid_t, bool);
 int perm_set_bounds(struct error *, const cap_value_t [], size_t);
 int perm_set_capabilities(struct error *, cap_flag_t, const cap_value_t [], size_t);
-
+int extract_path(const char*, char*, const char*);
 #endif /* HEADER_UTILS_H */

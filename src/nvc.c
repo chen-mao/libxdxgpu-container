@@ -280,7 +280,7 @@ load_kernel_modules(struct error *err, const char *root)
                         log_err("could not load kernel module nvidia");
                 else {
                         log_info("running mknod for " NV_CTL_DEVICE_PATH);
-                        if (nvidia_mknod(NV_CTL_DEVICE_MINOR) == 0)
+                        if (nvidia_mknod(XDX_RENDER_DEVICE_MINOR) == 0)
                                 log_err("could not create kernel module device node");
                         for (int i = 0; i < (int)devs.num_matches; ++i) {
                                 log_infof("running mknod for " NV_DEVICE_PATH, i);

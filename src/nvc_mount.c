@@ -15,7 +15,8 @@
 #include <string.h>
 #include <sched.h>
 #include <unistd.h>
-
+#include <dirent.h>
+#include <regex.h>
 #include "nvc_internal.h"
 
 #include "cgroup.h"
@@ -34,13 +35,15 @@ static char *mount_ipc(struct error *, const char *, const struct nvc_container 
 static char *mount_procfs(struct error *, const char *, const struct nvc_container *);
 static char *mount_procfs_gpu(struct error *, const char *, const struct nvc_container *, const char *);
 static char *mount_procfs_mig(struct error *, const char *, const struct nvc_container *, const char *);
-static char *mount_sysfs_class(struct error *, const char *, const struct nvc_container *);
-static char *mount_sysfs_gpu(struct error *, const char *, const struct nvc_container *);
+// static char *mount_pcie(struct error *, const char *, const struct nvc_container *, const char*);
+static char *mount_ld_config(struct error *, const char *, const struct nvc_container *);
 static char *mount_app_profile(struct error *, const struct nvc_container *);
 static int  update_app_profile(struct error *, const struct nvc_container *, dev_t);
 static void unmount(const char *);
+// static int  find_pcie_path(struct error *, const char*, char link_path[][256], char target_path[][256], size_t*);
 static int  symlink_library(struct error *, const char *, const char *, const char *, uid_t, gid_t);
 static int  symlink_libraries(struct error *, const struct nvc_container *, const char * const [], size_t);
+// static int  symlink_pcie(struct error *, const struct nvc_container *, char link_path[][256], char target_path[][256], size_t *);
 static void filter_libraries(const struct nvc_driver_info *, char * [], size_t *);
 static int  device_mount_dxcore(struct nvc_context *, const struct nvc_container *);
 static int  device_mount_native(struct nvc_context *, const struct nvc_container *, const struct nvc_device *);
@@ -214,11 +217,16 @@ mount_device(struct error *err, const char *root, const struct nvc_container *cn
         mode_t mode;
         char *mnt;
 
-        char *dev_mnt = dirname(dev->path);
-        if (path_join(err, src, root, dev_mnt) < 0)
+        if (path_join(err, src, root, dev->path) < 0)
                 return (NULL);
-        if (path_resolve_full(err, dst, cnt->cfg.rootfs, dev_mnt) < 0)
+        if (path_resolve_full(err, dst, cnt->cfg.rootfs, dev->path) < 0)
                 return (NULL);
+        if (xstat(err, src, &s) < 0)
+                return (NULL);
+        if (s.st_rdev != dev->id) {
+                error_setx(err, "invalid device node: %s", src);
+                return (NULL);
+        }
         if (file_mode(err, src, &mode) < 0)
                 return (NULL);
         if (file_create(err, dst, NULL, cnt->uid, cnt->gid, mode) < 0)
@@ -500,73 +508,142 @@ mount_procfs_mig(struct error *err, const char *root, const struct nvc_container
         return (NULL);
 }
 
-static char *
-mount_sysfs_class(struct error *err, const char *root, const struct nvc_container *cnt)
-{
-        char src[PATH_MAX];
-        char dst[PATH_MAX] = {0};
-        char *mnt = NULL;
-        mode_t mode;
+// static int 
+// find_pcie_path(struct error *err, const char* prefix_card,char link_path[PATH_MAX][256], char target_path[PATH_MAX][256], size_t* count) {
+    
+//     int rv = -1;
+//     DIR *dir = opendir(XDX_SYS_CLASS_DRM);
+//     if (dir == NULL) {
+//         return rv;
+//     }
+    
+//     struct dirent *entry;
+//     while ((entry = readdir(dir)) != NULL) {
+//         if (entry->d_type != DT_LNK && entry->d_type != DT_REG) {
+//             continue;  // Skip non-symbolic links and non-regular files
+//         }
 
-        if (path_join(err,src,root, XDX_SYS_CLASS_DRM) < 0) 
-                goto fail;
+//         char path[256];
+//         snprintf(path, sizeof(path), "%s/%s", XDX_SYS_CLASS_DRM, entry->d_name);
+
+//         struct stat st;
+//         if (lstat(path, &st) != 0 || !S_ISLNK(st.st_mode)) {
+//             continue;  // Skip if lstat fails or file is not a regular file or symbolic link
+//         }
+
+//         if (strstr(entry->d_name, prefix_card) == NULL) {
+//             continue;  // Skip if search string is not found in the file name
+//         }
+
+//         if (*count >= PATH_MAX) {
+//                 break;
+//         }
         
-        if (path_resolve_full(err,dst,cnt->cfg.rootfs,XDX_SYS_CLASS_DRM) < 0)
-                goto fail;
+//         if (S_ISLNK(st.st_mode)) { 
+//             strcpy(link_path[*count], path);
+//             if (realpath(path, target_path[*count]) != NULL) {
+//                 (*count)++;
+//                 if (*count >= PATH_MAX) {
+//                     break;  // Stop if the target_path array is full
+//                 }
+//             } else {
+//                 return rv;
+//             }
+//         }
+//     }
+//     rv = 0;
+//     closedir(dir);
+//     return rv;
+// }
 
-        if (file_mode(err,src,&mode) < 0) 
-                goto fail;
+// static int
+// symlink_pcie(struct error *err, const struct nvc_container *cnt, char link_path[PATH_MAX][256], char target_path[PATH_MAX][256], size_t *count)
+// {
+//         char link_dir[256] = {0};
+//         char link_dst_dir[256] = {0};
+//         int rv = -1;
+//         mode_t mode;
+
+//         if (extract_path(link_path[0], link_dir, "drm") < 0) {
+//                 goto  fail;
+//         }
+//         if (path_resolve_full(err, link_dst_dir, cnt->cfg.rootfs, link_dir) < 0)
+//                 goto fail;
+//         if (file_mode(err, link_dir, &mode) < 0) 
+//                 goto fail;
+//         if (file_create(err, link_dst_dir, NULL, cnt->uid, cnt->gid, mode) < 0)
+//                 goto fail;
+
+//         for (int i = 0; i < *count; i++) {
+//                 char dst_link[256] = {0};
+//                 char src_file[256] = {0};
+//                 if (file_mode_link(err, link_path[i], &mode) < 0) 
+//                         goto fail;
+//                 if (snprintf(dst_link, sizeof(dst_link), "%s%s", cnt->cfg.rootfs, link_path[i]) < 0 ) {
+//                         goto fail;
+//                 }
+//                 if (path_resolve_full(err, src_file, cnt->cfg.rootfs, target_path[i]) < 0)
+//                         goto fail;
+
+//                 log_infof("create symlink, src_file: %s at  dst_link: %s", src_file, dst_link);
+//                 symlink(src_file , dst_link);
+//         }
+//         rv = 0;
+//         fail:
+//                 return rv;   
+// }
+
+// static char *
+// mount_pcie(struct error *err, const char *root, const struct nvc_container *cnt, const char* path)
+// {
+//         char src[256];
+//         char dst[256] = {0}; 
+
+//         char link_path[PATH_MAX][256];
+//         char target_path[PATH_MAX][256];
         
-        if (file_create(err,dst,NULL,cnt->uid,cnt->gid,mode) < 0)
-                goto fail;
-  
-        log_infof("mounting %s at %s", src, dst);
-        if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
-                goto fail;
-        if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
-                goto fail;
-        if ((mnt = xstrdup(err, dst)) == NULL)
-                goto fail;
+//         char drm_dir[256] = {0};
+//         char pcie_card[256] = {0};
 
-        return (mnt);
- fail:
-        unmount(dst);
-        return (NULL);
-}
+//         char *mnt = NULL;
+//         mode_t mode;
+//         size_t count = 0;
 
-static char *
-mount_sysfs_gpu(struct error *err, const char *root, const struct nvc_container *cnt)
-{
-        char src[PATH_MAX];
-        char dst[PATH_MAX] = {0};
-        char *mnt = NULL;
-        mode_t mode;
+//         const char *prefix_card = strrchr(path, '/') +1;
+//         if (find_pcie_path(err, prefix_card, link_path, target_path, &count) < 0 ) {
+//                 goto fail;
+//         }
+   
+//         if (extract_path(target_path[0], drm_dir, "drm") < 0) {
+//                 goto  fail;
+//         }
+//         snprintf(pcie_card, sizeof(pcie_card), "%s/%s", drm_dir , prefix_card);
 
-        if (path_join(err,src,root, XDX_SYS_PCI) < 0) 
-                goto fail;
-        
-        if (path_resolve_full(err,dst,cnt->cfg.rootfs,XDX_SYS_PCI) < 0)
-                goto fail;
+//         if (path_join(err, src, root, pcie_card) < 0)
+//                 goto fail;  
+//         if (path_resolve_full(err,dst, cnt->cfg.rootfs, pcie_card) < 0)
+//                 goto fail;
+//         if (file_mode(err,src,&mode) < 0) 
+//                 goto fail;
+//         if (file_create(err, dst, NULL, cnt->uid, cnt->gid, mode) < 0)
+//                 goto fail;
 
-        if (file_mode(err,src,&mode) < 0) 
-                goto fail;
-        
-        if (file_create(err,dst,NULL,cnt->uid,cnt->gid,mode) < 0)
-                goto fail;
-  
-        log_infof("mounting %s at %s", src, dst);
-        if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
-                goto fail;
-        if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
-                goto fail;
-        if ((mnt = xstrdup(err, dst)) == NULL)
-                goto fail;
+//         log_infof("mounting %s at %s", src, dst);
+//         if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
+//                 goto fail;
+//         if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+//                 goto fail;
+//         if ((mnt = xstrdup(err, dst)) == NULL)
+//                 goto fail;
 
-        return (mnt);
- fail:
-        unmount(dst);
-        return (NULL);
-}
+//         if (symlink_pcie(err, cnt, link_path, target_path, &count) < 0)
+//                 goto fail; 
+
+//         return (mnt);
+//         fail:
+//                 unmount(dst);
+//                 return (NULL);    
+// }
 
 static char *
 mount_ld_config(struct error *err, const char *root, const struct nvc_container *cnt)
@@ -576,10 +653,10 @@ mount_ld_config(struct error *err, const char *root, const struct nvc_container 
         char *mnt = NULL;
         mode_t mode;
 
-        if (path_join(err,src,root, XDX_LD_CONFIG) < 0) 
+        if (path_join(err,src,root, LD_CONFIG) < 0) 
                 goto fail;
 
-        if (path_resolve_full(err,dst,cnt->cfg.rootfs, dirname(XDX_LD_CONFIG)) < 0)
+        if (path_resolve_full(err,dst,cnt->cfg.rootfs, LD_CONFIG) < 0)
                 goto fail;
 
         if (file_mode(err,src,&mode) < 0) 
@@ -611,6 +688,7 @@ unmount(const char *path)
         file_remove(NULL, path);
 }
 
+
 static int
 symlink_library(struct error *err, const char *src, const char *target, const char *linkname, uid_t uid, gid_t gid)
 {
@@ -633,33 +711,50 @@ symlink_library(struct error *err, const char *src, const char *target, const ch
         return (rv);
 }
 
+bool
+macth_target_library(char *lib, const char * pattern) {
+        regex_t regex;
+        int reti = regcomp(&regex, pattern, REG_EXTENDED);
+        if (reti) {
+                return false;
+        }
+
+        reti = regexec(&regex, lib, 0, NULL, 0);
+        if (reti == 0) {
+            return true;   
+        }
+        return false;
+}
+
 static int
 symlink_libraries(struct error *err, const struct nvc_container *cnt, const char * const paths[], size_t size)
 {
         char *lib;
+        char *target_lib;
 
+        regex_t regex;
         for (size_t i = 0; i < size; ++i) {
                 lib = basename(paths[i]);
-                if (str_has_prefix(lib, "libcuda.so")) {
-                        /* XXX Many applications wrongly assume that libcuda.so exists (e.g. with dlopen). */
-                        if (symlink_library(err, paths[i], SONAME_LIBCUDA, "libcuda.so", cnt->uid, cnt->gid) < 0)
-                                return (-1);
-                } else if (str_has_prefix(lib, "libGLX_nvidia.so")) {
-                        /* XXX GLVND requires this symlink for indirect GLX support. */
-                        if (symlink_library(err, paths[i], lib, "libGLX_indirect.so.0", cnt->uid, cnt->gid) < 0)
-                                return (-1);
-                } else if (str_has_prefix(lib, "libnvidia-opticalflow.so")) {
-                        /* XXX Fix missing symlink for libnvidia-opticalflow.so. */
-                        if (symlink_library(err, paths[i], "libnvidia-opticalflow.so.1", "libnvidia-opticalflow.so", cnt->uid, cnt->gid) < 0)
-                                return (-1);
-                } else if (str_has_prefix(lib, "libGL_xdxgpu.so")) {
-                        /* XXX Fix missing symlink for libGL_xdxgpu.so */
-                        if (symlink_library(err, paths[i], "libGL_xdxgpu.so.1", "libGL_xdxgpu.so", cnt->uid, cnt->gid) < 0)
-                                return (-1);
+                if (str_has_prefix(lib, "libGL_xdxgpu.so")) {
+                        const char *pattern = "^libGL_xdxgpu\\.so\\.[0-9]+\\.[0-9]+\\.[0-9]+$";
+                        if (macth_target_library(lib, pattern)) {
+                                if (symlink_library(err, paths[i], lib, "libGL_xdxgpu.so", cnt->uid, cnt->gid) < 0)
+                                        return (-1);
+                        }
                 } else if (str_has_prefix(lib, "libxdxgpu-ml.so")) {
-                        /* XXX Fix missing symlink for libGL_xdxgpu.so */
-                        if (symlink_library(err, paths[i], "libxdxgpu-ml.so.1.3.0", "libxdxgpu-ml.so", cnt->uid, cnt->gid) < 0)
+                        const char *pattern = "^libxdxgpu-ml\\.so\\.[0-9]+\\.[0-9]+\\.[0-9]+$";
+                        if (macth_target_library(lib, pattern)) {
+                                if (symlink_library(err, paths[i], lib, "libxdxgpu-ml.so", cnt->uid, cnt->gid) < 0)
                                 return (-1);
+                        }
+                } else if (str_has_prefix(lib, "libCL_xdxgpu.so")) {
+                        const char *pattern = "^libCL_xdxgpu\\.so\\.[0-9]+\\.[0-9]+\\.[0-9]+$";
+                        if (macth_target_library(lib, pattern)) {
+                                if (symlink_library(err, paths[i], lib, "libOpenCL.so.1", cnt->uid, cnt->gid ) < 0 )
+                                        return (-1);
+                                if (symlink_library(err, paths[i], "libOpenCL.so.1", "libOpenCL.so", cnt->uid, cnt->gid ) < 0 )
+                                        return (-1);
+                        }
                 } 
         }
         return (0);
@@ -720,27 +815,24 @@ static int
 device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, const struct nvc_device *dev)
 {
         char *dev_mnt = NULL;
-        char *sys_class_mnt = NULL;
-        char *sys_device_mnt = NULL;
+        char *pci_mnt = NULL;
         char *ld_config_mnt = NULL;
         const char **tmp;
 
+        // to do, support arm  
         char *dri_libs[] = {
                 "/usr/lib/x86_64-linux-gnu/dri/xdxgpu_dri.so",
                 "/usr/lib/x86_64-linux-gnu/dri/xdxgpu_drv_video.la",
                 "/usr/lib/x86_64-linux-gnu/dri/xdxgpu_drv_video.so"
         };
+        
         int rv = -1;
-
         if (!(cnt->flags & OPT_NO_DEVBIND)) {
                 if ((dev_mnt = mount_device(&ctx->err, ctx->cfg.root, cnt, &dev->node)) == NULL)
                         goto fail;
         }
-        log_infof("--->busid %s",dev->busid);
-        if ((sys_class_mnt = mount_sysfs_class(&ctx->err, ctx->cfg.root, cnt)) == NULL)
-                goto fail;
-        if ((sys_device_mnt = mount_sysfs_gpu(&ctx->err, ctx->cfg.root, cnt))== NULL)
-                goto fail;
+        // if ((pci_mnt = mount_pcie(&ctx->err, ctx->cfg.root, cnt, dev->node.path)) == NULL)
+        //         goto fail;
         if ((ld_config_mnt = mount_ld_config(&ctx->err, ctx->cfg.root, cnt))== NULL)
                 goto fail;
         if (cnt->flags & OPT_GRAPHICS_LIBS) {
@@ -757,19 +849,16 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
                 if (setup_device_cgroup(&ctx->err, cnt, dev->node.id) < 0)
                         goto fail;
         }
-
         rv = 0;
 
  fail:
         if (rv < 0) {
-                unmount(sys_class_mnt);
-                unmount(sys_device_mnt);
+                unmount(pci_mnt);
                 unmount(ld_config_mnt);
                 unmount(dev_mnt);
         }
 
-        free(sys_class_mnt);
-        free(sys_device_mnt);
+        free(pci_mnt);
         free(ld_config_mnt);
         free(dev_mnt);
 
@@ -934,7 +1023,6 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
 
         /* Device mounts */
         log_infof("info->ndevs: %d", info->ndevs);
-        log_infof("start set device cgroup: %s", info->devs[0].path);
         for (size_t i = 0; i < info->ndevs; ++i) {
                 /* On WSL2 we only mount the /dev/dxg device and as such these checks are not applicable. */
                 if (!ctx->dxcore.initialized) {
@@ -945,10 +1033,11 @@ nvc_driver_mount(struct nvc_context *ctx, const struct nvc_container *cnt, const
                         if (!(cnt->flags & OPT_DISPLAY) && minor(info->devs[i].id) == NV_MODESET_DEVICE_MINOR)
                                 continue;
                 }
-                // if (!(cnt->flags & OPT_NO_DEVBIND)) {
-                //         if ((*ptr++ = mount_device(&ctx->err, ctx->cfg.root, cnt, &info->devs[i])) == NULL)
-                //                 goto fail;
-                // }
+                if (!(cnt->flags & OPT_NO_DEVBIND)) {
+                        log_infof("start set device cgroup: %s", info->devs[0].path);
+                        if ((*ptr++ = mount_device(&ctx->err, ctx->cfg.root, cnt, &info->devs[i])) == NULL)
+                                goto fail;
+                }
                 if (!(cnt->flags & OPT_NO_CGROUPS)) {
                         log_infof("start set device cgroup: %s", info->devs[i].path);
                         if (setup_device_cgroup(&ctx->err, cnt, info->devs[i].id) < 0)

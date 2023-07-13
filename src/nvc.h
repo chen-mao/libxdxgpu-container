@@ -26,7 +26,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 #define NVC_MAJOR   1
-#define NVC_MINOR   14
+#define NVC_MINOR   0
 #define NVC_PATCH   0
 
 // Specify the release tag.
@@ -34,7 +34,7 @@ extern "C" {
 // For release candidates, this should be defined with the format "rc.1"
 // The version string should also be updated accordingly, using a - separator where applicable.
 #define NVC_TAG "rc.1"
-#define NVC_VERSION "1.14.0-rc.1"
+#define NVC_VERSION "1.0.0-rc.1"
 
 #define NVC_ARG_MAX 256
 

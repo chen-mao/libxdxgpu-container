@@ -660,6 +660,17 @@ file_mode(struct error *err, const char *path, mode_t *mode)
 }
 
 int
+file_mode_link(struct error *err, const char *path, mode_t *mode)
+{
+        struct stat s;
+
+        if (xlstat(err, path, &s) < 0)
+                return (-1);
+        *mode = s.st_mode;
+        return (0);
+}
+
+int
 file_read_line(struct error *err, const char *path, char *buf, size_t size)
 {
         FILE *fs;
@@ -1020,4 +1031,19 @@ perm_set_capabilities(struct error *err, cap_flag_t type, const cap_value_t caps
         cap_free(state);
         cap_free(tmp);
         return (rv);
+}
+
+int
+extract_path(const char* src_path, char* dst_path,  const char* keyword) {
+        const char* keyword_start = strstr(src_path, keyword);
+
+        if (keyword_start != NULL) {
+                long int length = keyword_start - src_path + strlen(keyword);
+                strncpy(dst_path, src_path, length);
+                dst_path[length] = '\0';
+        } else {
+                dst_path[0] = '\0';
+                return -1;
+        }
+        return 0;
 }

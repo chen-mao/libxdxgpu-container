@@ -30,7 +30,7 @@ struct libnvc libnvc = {0};
 
 static const char *tegra_release_file = "/etc/nv_tegra_release";
 static const char *tegra_family_file = "/sys/devices/soc0/family";
-static const char *libnvc_v0_soname= "libnvidia-container.so.0";
+static const char *libnvc_v0_soname= "libxdxct-container.so.0";
 static const char *libnvml_soname= "libnvidia-ml.so.1";
 
 static struct libnvc libnvc_v0_wrapped = {0};

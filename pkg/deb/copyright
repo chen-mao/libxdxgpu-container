@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: libnvidia-container
-Source: https://github.com/NVIDIA/libnvidia-container
+Upstream-Name: libxdxct-container
+Source: https://github.com/NVIDIA/libxdxct-container
 
 Files: *
 Copyright: 2017-2020 NVIDIA CORPORATION <cudatools@nvidia.com>

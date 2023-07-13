@@ -20,7 +20,7 @@ static error_t parser(int, char *, struct argp_state *);
 #pragma GCC visibility push(default)
 error_t argp_err_exit_status = EXIT_FAILURE;
 void (*argp_program_version_hook)(FILE *, struct argp_state *) = &print_version;
-const char *argp_program_bug_address = "https://github.com/NVIDIA/libnvidia-container/issues";
+const char *argp_program_bug_address = "https://github.com/NVIDIA/libxdxct-container/issues";
 #pragma GCC visibility pop
 
 static struct argp usage = {
