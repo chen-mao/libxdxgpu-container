@@ -145,7 +145,7 @@ docker-amd64-verify: $(patsubst %, %-verify, $(AMD64_TARGETS)) \
 
 docker-build-%: $(ARTIFACTS_DIR)
 	@echo "Building for $(TARGET_PLATFORM)"
-	$(DOCKER) pull --platform=linux/$(ARCH) 172.18.25.248:5005/ubuntu:20.04
+	$(DOCKER) pull --platform=linux/$(ARCH) $(BASEIMAGE)
 	DOCKER_BUILDKIT=1 \
 	$(DOCKER) build \
 	    --platform=linux/$(ARCH) \

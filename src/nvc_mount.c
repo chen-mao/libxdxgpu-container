@@ -689,7 +689,6 @@ unmount(const char *path)
 }
 
 
-
 static int
 symlink_library(struct error *err, const char *src, const char *target, const char *linkname, uid_t uid, gid_t gid)
 {

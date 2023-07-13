@@ -61,6 +61,7 @@ static const char * const utility_libs[] = {
 
 static const char * const compute_libs[] = {
         "libCL_xdxgpu.so",
+        "libdrm.so"
 };
 
 static const char * const video_libs[] = {
