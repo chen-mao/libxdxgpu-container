@@ -36,7 +36,7 @@ static char *mount_procfs(struct error *, const char *, const struct nvc_contain
 static char *mount_procfs_gpu(struct error *, const char *, const struct nvc_container *, const char *);
 static char *mount_procfs_mig(struct error *, const char *, const struct nvc_container *, const char *);
 // static char *mount_pcie(struct error *, const char *, const struct nvc_container *, const char*);
-static char *mount_ld_config(struct error *, const char *, const struct nvc_container *);
+static char *mount_config_file(struct error *, const char *, const struct nvc_container *, const char *);
 static char *mount_app_profile(struct error *, const struct nvc_container *);
 static int  update_app_profile(struct error *, const struct nvc_container *, dev_t);
 static void unmount(const char *);
@@ -646,17 +646,17 @@ mount_procfs_mig(struct error *err, const char *root, const struct nvc_container
 // }
 
 static char *
-mount_ld_config(struct error *err, const char *root, const struct nvc_container *cnt)
+mount_config_file(struct error *err, const char *root, const struct nvc_container *cnt, const char *dir)
 {
         char src[PATH_MAX];
         char dst[PATH_MAX] = {0};
         char *mnt = NULL;
         mode_t mode;
 
-        if (path_join(err,src,root, LD_CONFIG) < 0) 
+        if (path_join(err,src,root, dir) < 0) 
                 goto fail;
 
-        if (path_resolve_full(err,dst,cnt->cfg.rootfs, LD_CONFIG) < 0)
+        if (path_resolve_full(err,dst,cnt->cfg.rootfs, dir) < 0)
                 goto fail;
 
         if (file_mode(err,src,&mode) < 0) 
@@ -668,7 +668,7 @@ mount_ld_config(struct error *err, const char *root, const struct nvc_container 
         log_infof("mounting %s at %s", src, dst);
         if (xmount(err, src, dst, NULL, MS_BIND, NULL) < 0)
                 goto fail;
-        if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID|MS_NOEXEC, NULL) < 0)
+        if (xmount(err, NULL, dst, NULL, MS_BIND|MS_REMOUNT | MS_RDONLY|MS_NODEV|MS_NOSUID, NULL) < 0)
                 goto fail;
         if ((mnt = xstrdup(err, dst)) == NULL)
                 goto fail;
@@ -755,7 +755,13 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
                                 if (symlink_library(err, paths[i], "libOpenCL.so.1", "libOpenCL.so", cnt->uid, cnt->gid ) < 0 )
                                         return (-1);
                         }
-                } 
+                } else if (str_has_prefix(lib, "libpciaccess.so")) {
+                        const char *pattern = "^libpciaccess.so\\.so\\.[0-9]+\\.[0-9]+\\.[0-9]+$";
+                        if (macth_target_library(lib, pattern)) {
+                                if (symlink_library(err, paths[i], lib, "libpciaccess.so.0", cnt->uid, cnt->gid ) < 0 )
+                                        return (-1);
+                        }
+                }
         }
         return (0);
 }
@@ -833,11 +839,16 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
         }
         // if ((pci_mnt = mount_pcie(&ctx->err, ctx->cfg.root, cnt, dev->node.path)) == NULL)
         //         goto fail;
-        if ((ld_config_mnt = mount_ld_config(&ctx->err, ctx->cfg.root, cnt))== NULL)
+        if ((ld_config_mnt = mount_config_file(&ctx->err, ctx->cfg.root, cnt, LD_CONFIG_DIR))== NULL)
                 goto fail;
         if (cnt->flags & OPT_GRAPHICS_LIBS) {
                 if (update_app_profile(&ctx->err, cnt, dev->node.id) < 0)
                         goto fail;
+        }
+        if (cnt->flags & OPT_UTILITY_LIBS) {
+                if ((tmp = (const char **)mount_config_file(&ctx->err, ctx->cfg.root, cnt, SMI_FRONT_DIR)) == NULL)
+                        goto fail;
+                free(tmp);
         }
         if (cnt->flags & OPT_VIDEO_LIBS || cnt->flags & OPT_GRAPHICS_LIBS) {
                 size_t nlibs = sizeof(dri_libs)/sizeof(dri_libs[0]);

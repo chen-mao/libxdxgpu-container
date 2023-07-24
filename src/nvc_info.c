@@ -57,6 +57,7 @@ static const char * const utility_bins[] = {
 
 static const char * const utility_libs[] = {
         "libxdxgpu-ml.so",                    /* Management library */
+        "libpciaccess.so",
 };
 
 static const char * const compute_libs[] = {
