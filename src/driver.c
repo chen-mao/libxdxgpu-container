@@ -45,6 +45,11 @@ static struct driver {
         void *nvml_dl;
 } global_driver_context;
 
+static struct driverDevice {
+        xdx_device_t xdxml;
+        struct mig_device mig[MAX_MIG_DEVICES];
+} deviceHandles[MAX_DEVICES];
+
 #define call_nvml(err, ctx, sym, ...) __extension__ ({                                                 \
         union {void *ptr; __typeof__(&sym) fn;} u_;                                                    \
         nvmlReturn_t r_;                                                                               \
@@ -327,7 +332,7 @@ driver_get_device_count_1_svc(ptr_t ctxptr, driver_get_device_count_res *res, ma
         unsigned int count;
 
         memset(res, 0, sizeof(*res));
-        if (call_nvml(err, ctx, xdxml_device_get_count, &count) < 0)
+        if (call_xdxml(err, ctx, xdxml_device_get_count, &count) < 0)
                 goto fail;
         res->driver_get_device_count_res_u.count = count;
         return (true);
@@ -365,10 +370,10 @@ driver_get_device_1_svc(ptr_t ctxptr, u_int idx, driver_get_device_res *res, may
                 error_setx(err, "too many devices");
                 goto fail;
         }
-        if (call_nvml(err, ctx, xdxml_device_get_handle_by_index, (unsigned)idx, &device_handles[idx].nvml) < 0)
+        if (call_xdxml(err, ctx, xdxml_device_get_handle_by_index, (unsigned)idx, &deviceHandles[idx].xdxml) < 0)
                 goto fail;
 
-        res->driver_get_device_res_u.dev = (ptr_t)&device_handles[idx];
+        res->driver_get_device_res_u.dev = (ptr_t)&deviceHandles[idx];
         return (true);
 
  fail:
@@ -398,11 +403,11 @@ driver_get_device_minor_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_minor_r
 {
         struct error *err = (struct error[]){0};
         struct driver *ctx = (struct driver *)ctxptr;
-        struct driver_device *handle = (struct driver_device *)dev;
+        struct driverDevice *handle = (struct driverDevice *)dev;
         unsigned int minor;
 
         memset(res, 0, sizeof(*res));
-        if (call_nvml(err, ctx, xdxml_device_get_minor_number, handle->nvml, &minor) < 0)
+        if (call_xdxml(err, ctx, xdxml_device_get_minor_number, handle->xdxml, &minor) < 0)
                 goto fail;
         res->driver_get_device_minor_res_u.minor = minor;
         return (true);
@@ -435,11 +440,11 @@ driver_get_device_busid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_busid_r
 {
         struct error *err = (struct error[]){0};
         struct driver *ctx = (struct driver *)ctxptr;
-        struct driver_device *handle = (struct driver_device *)dev;
+        struct driverDevice *handle = (struct driverDevice *)dev;
         xdxml_pci_info_t pci;
 
         memset(res, 0, sizeof(*res));
-        if (call_nvml(err, ctx, xdxml_device_get_pci_info, handle->nvml, &pci) < 0)
+        if (call_xdxml(err, ctx, xdxml_device_get_pci_info, handle->xdxml, &pci) < 0)
                 goto fail;
 
         if (xasprintf(err, &res->driver_get_device_busid_res_u.busid, "%08lx:%02lx:%02lx.0", pci.domain, pci.bus, pci.device) < 0)
@@ -474,13 +479,13 @@ driver_get_device_uuid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_uuid_res
 {
         struct error *err = (struct error[]){0};
         struct driver *ctx = (struct driver *)ctxptr;
-        struct driver_device *handle = (struct driver_device *)dev;
+        struct driverDevice *handle = (struct driverDevice *)dev;
         char buf[NVML_DEVICE_UUID_V2_BUFFER_SIZE];
 
         memset(res, 0, sizeof(*res));
-        if (call_nvml(err, ctx, nvmlDeviceGetUUID, handle->nvml, buf, sizeof(buf)) < 0)
+        if (call_xdxml(err, ctx, xdxml_device_get_uuid, handle->xdxml) < 0)
                 goto fail;
-        if ((res->driver_get_device_uuid_res_u.uuid = xstrdup(err, buf)) == NULL)
+        if ((res->driver_get_device_uuid_res_u.uuid = xstrdup(err, handle->xdxml->uuid)) == NULL)
                 goto fail;
         return (true);
 
@@ -512,11 +517,11 @@ driver_get_device_model_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_model_r
 {
         struct error *err = (struct error[]){0};
         struct driver *ctx = (struct driver *)ctxptr;
-        struct driver_device *handle = (struct driver_device *)dev;
+        struct driverDevice *handle = (struct driverDevice *)dev;
         char buf[NVML_DEVICE_NAME_BUFFER_SIZE];
 
         memset(res, 0, sizeof(*res));
-        if (call_nvml(err, ctx, xdxml_device_get_product_name, handle->nvml, buf) < 0)
+        if (call_xdxml(err, ctx, xdxml_device_get_product_name, handle->xdxml, buf) < 0)
                 goto fail;
         if ((res->driver_get_device_model_res_u.model = xstrdup(err, buf)) == NULL)
                 goto fail;

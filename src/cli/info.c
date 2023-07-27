@@ -103,9 +103,9 @@ info_command(const struct context *ctx)
         } else {
                 // printf("%-15s %s\n%-15s %s\n", "NVRM version:", drv->nvrm_version, "CUDA version:", drv->cuda_version);
                 for (size_t i = 0; i < dev->ngpus; ++i)
-                        printf("%-15s %zu\n%-15s %u\n%-15s %s\n%-15s %s\n",
+                        printf("%-15s %zu\n%-15s %u\n%-15s %s\n%-15s %s\n%-15s %s\n",
                             "Device Index:", i, "Device Minor:", minor(dev->gpus[i].node.id), "Model:", dev->gpus[i].model, 
-                             "Bus Location:", dev->gpus[i].busid);
+                             "Bus Location:", dev->gpus[i].busid, "Device UUID:", dev->gpus[i].uuid);
         }
 
         if (run_as_root && perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[NVC_SHUTDOWN], ecaps_size(NVC_SHUTDOWN)) < 0) {

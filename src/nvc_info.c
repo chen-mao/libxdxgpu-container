@@ -569,9 +569,8 @@ init_nvc_device(struct nvc_context *ctx, unsigned int index, struct nvc_device *
                 goto fail;
         if (driver_get_device_busid(err, dev, &gpu->busid) < 0)
                 goto fail;
-
-        // if (driver_get_device_uuid(err, dev, &gpu->uuid) < 0)
-        //         goto fail;
+        if (driver_get_device_uuid(err, dev, &gpu->uuid) < 0)
+                goto fail;
         // if (driver_get_device_arch(err, dev, &gpu->arch) < 0)
         //         goto fail;
         // if (driver_get_device_brand(err, dev, &gpu->brand) < 0)
