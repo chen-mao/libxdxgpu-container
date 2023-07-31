@@ -172,17 +172,19 @@ select_gpu_device(
         *gpu = NULL;
 
         // Check if dev matches a full GPU UUID.
-        if (!strncasecmp(dev, "GPU-", strlen("GPU-")) && strlen(dev) > strlen("GPU-")) {
-                for (size_t i = 0; i < available->ngpus; ++i) {
-                        if (strlen(available->gpus[i].uuid) != strlen(dev))
-                                continue;
-                        if (!strcasecmp(available->gpus[i].uuid, dev)) {
-                                *gpu = &available->gpus[i];
-                                goto found;
-                        }
+        for (size_t i=0; i < available->ngpus; i++) {
+                char *gpus_uuid_tmp = dev+2; 
+                if (strlen(available->gpus[i].uuid) != strlen(gpus_uuid_tmp)) {
+                        printf("available->gpus[i].uuid: %s", available->gpus[i].uuid);
+                        printf("gpus_uuid_tmp: %s", gpus_uuid_tmp);
+                        continue;
                 }
-        }
+                if (! strcasecmp(available->gpus[i].uuid, gpus_uuid_tmp)) {
+                        *gpu = &available->gpus[i];
+                        goto found;
+                }
 
+        }
         // Check if dev matches a PCI bus ID.
         char buf[NVML_DEVICE_PCI_BUS_ID_BUFFER_SIZE + 1];
         if (matches_pci_format(dev, buf, sizeof(buf))) {
