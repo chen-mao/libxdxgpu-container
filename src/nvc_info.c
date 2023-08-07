@@ -69,8 +69,9 @@ static const char * const video_libs[] = {
         "libva.so",
         "libva-x11.so",
         "xdxgpu_dri.so",
-        "xdxgpu_drv_video.la",
         "xdxgpu_drv_video.so",
+        "xdxgpu_drv_video_a0.so",
+        "xdxgpu_drv_video_b0.so",
 };
 
 static const char * const graphics_libs[] = {
@@ -302,6 +303,8 @@ lookup_libraries(struct error *err, struct dxcore_context *dxcore, struct nvc_dr
         ptr = array_append(ptr, compute_libs, nitems(compute_libs));
         ptr = array_append(ptr, video_libs, nitems(video_libs));
         ptr = array_append(ptr, graphics_libs, nitems(graphics_libs));
+        // TODO
+        // log_infof("****239:The root path is %s", root);
 
         if (dxcore->initialized)
                 ptr = array_append(ptr, dxcore_libs, nitems(dxcore_libs));
@@ -313,10 +316,10 @@ lookup_libraries(struct error *err, struct dxcore_context *dxcore, struct nvc_dr
                 if (info->libs[i] == NULL)
                         log_warnf("missing library %s", libs[i]);
         }
-        for (size_t i = 0; info->libs32 != NULL && i < info->nlibs32; ++i) {
-                if (info->libs32[i] == NULL)
-                        log_warnf("missing compat32 library %s", libs[i]);
-        }
+        // for (size_t i = 0; info->libs32 != NULL && i < info->nlibs32; ++i) {
+        //         if (info->libs32[i] == NULL)
+        //                 log_warnf("missing compat32 library %s", libs[i]);
+        // }
         array_pack(info->libs, &info->nlibs);
         array_pack(info->libs32, &info->nlibs32);
         return (0);

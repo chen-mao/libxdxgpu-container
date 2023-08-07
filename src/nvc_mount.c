@@ -825,13 +825,33 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
         char *ld_config_mnt = NULL;
         const char **tmp;
 
-        // to do, support arm  
-        char *dri_libs[] = {
-                "/usr/lib/x86_64-linux-gnu/dri/xdxgpu_dri.so",
-                "/usr/lib/x86_64-linux-gnu/dri/xdxgpu_drv_video.la",
-                "/usr/lib/x86_64-linux-gnu/dri/xdxgpu_drv_video.so"
-        };
-        
+        const char *pattern = "^xdxgpu_dr[iv].*\\.so$";
+        char *dri_libs[XDX_VIDEO_LIB_NUM];
+        size_t nlibs = 0;
+
+        DIR *dir;
+        dir = opendir(XDX_LIB_DIR);
+        if (NULL == dir) {
+            error_set(&ctx->err, "Open dir error!");
+            return -1;
+        }
+        struct dirent *entry;
+
+        while ((entry = readdir(dir)) != NULL) {
+            if (macth_target_library(entry->d_name, pattern)) {
+                const char *filename = entry->d_name;
+                char *buf = malloc(strlen(XDX_LIB_DIR) + strlen(filename) + 2);
+                if (NULL == buf) {
+                        error_set(&ctx->err, "Invoke malloc error!");
+                        return -1;
+                }
+                sprintf(buf, "%s/%s", XDX_LIB_DIR, filename);
+                dri_libs[nlibs++] = buf;
+            }
+             
+        }
+        closedir(dir);
+
         int rv = -1;
         if (!(cnt->flags & OPT_NO_DEVBIND)) {
                 if ((dev_mnt = mount_device(&ctx->err, ctx->cfg.root, cnt, &dev->node)) == NULL)
@@ -851,9 +871,9 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
                 free(tmp);
         }
         if (cnt->flags & OPT_VIDEO_LIBS || cnt->flags & OPT_GRAPHICS_LIBS) {
-                size_t nlibs = sizeof(dri_libs)/sizeof(dri_libs[0]);
-                if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, XDX_LIB_DRI, dri_libs, nlibs)) == NULL)
+                if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, XDX_LIB_DIR, dri_libs, nlibs)) == NULL){
                         goto fail;
+                }
                 free(tmp);
         }
         if (!(cnt->flags & OPT_NO_CGROUPS)) {
@@ -872,7 +892,6 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
         free(pci_mnt);
         free(ld_config_mnt);
         free(dev_mnt);
-
         return (rv);
 }
 
