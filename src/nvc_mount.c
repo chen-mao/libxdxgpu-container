@@ -817,6 +817,37 @@ device_mount_dxcore(struct nvc_context *ctx, const struct nvc_container *cnt)
         return 0;
 }
 
+int
+library_search_in_dir(struct error *err, char *libs[], const char *lib_dir, const char *pattern, size_t *nlibs) 
+{
+        DIR *dir;
+        dir = opendir(lib_dir);
+        size_t tmpn = 0;
+        if (NULL == dir) {
+            error_set(err, "Open dir error!");
+            return -1;
+        }
+        struct dirent *entry;
+
+        while ((entry = readdir(dir)) != NULL) {
+            if (macth_target_library(entry->d_name, pattern)) {
+                const char *filename = entry->d_name;
+                char *buf = malloc(strlen(XDX_LIB_DRI) + strlen(filename) + 2);
+                if (NULL == buf) {
+                        error_set(err, "Invoke malloc error!");
+                        return -1;
+                }
+                sprintf(buf, "%s/%s", XDX_LIB_DRI, filename);
+                libs[(tmpn)++] = buf;
+            }
+             
+        }
+        closedir(dir);
+        *nlibs = tmpn;
+        return nlibs;
+}
+
+
 static int
 device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, const struct nvc_device *dev)
 {
@@ -827,31 +858,13 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
 
         const char *pattern = "^xdxgpu_dr[iv].*\\.so$";
         char *dri_libs[XDX_VIDEO_LIB_NUM];
-        size_t nlibs = 0;
+        size_t nlibs;
 
-        DIR *dir;
-        dir = opendir(XDX_LIB_DIR);
-        if (NULL == dir) {
-            error_set(&ctx->err, "Open dir error!");
-            return -1;
+        if (library_search_in_dir(&ctx->err, dri_libs, XDX_LIB_DRI, pattern, &nlibs) < 0) {
+                log_errf("%s", ctx->err.msg);
+                return -1;
         }
-        struct dirent *entry;
-
-        while ((entry = readdir(dir)) != NULL) {
-            if (macth_target_library(entry->d_name, pattern)) {
-                const char *filename = entry->d_name;
-                char *buf = malloc(strlen(XDX_LIB_DIR) + strlen(filename) + 2);
-                if (NULL == buf) {
-                        error_set(&ctx->err, "Invoke malloc error!");
-                        return -1;
-                }
-                sprintf(buf, "%s/%s", XDX_LIB_DIR, filename);
-                dri_libs[nlibs++] = buf;
-            }
-             
-        }
-        closedir(dir);
-
+        
         int rv = -1;
         if (!(cnt->flags & OPT_NO_DEVBIND)) {
                 if ((dev_mnt = mount_device(&ctx->err, ctx->cfg.root, cnt, &dev->node)) == NULL)
@@ -871,7 +884,7 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
                 free(tmp);
         }
         if (cnt->flags & OPT_VIDEO_LIBS || cnt->flags & OPT_GRAPHICS_LIBS) {
-                if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, XDX_LIB_DIR, dri_libs, nlibs)) == NULL){
+                if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, XDX_LIB_DRI, dri_libs, nlibs)) == NULL){
                         goto fail;
                 }
                 free(tmp);
