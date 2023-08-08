@@ -832,12 +832,12 @@ library_search_in_dir(struct error *err, char *libs[], const char *lib_dir, cons
         while ((entry = readdir(dir)) != NULL) {
             if (macth_target_library(entry->d_name, pattern)) {
                 const char *filename = entry->d_name;
-                char *buf = malloc(strlen(XDX_LIB_DRI) + strlen(filename) + 2);
+                char *buf = malloc(strlen(lib_dir) + strlen(filename) + 2);
                 if (NULL == buf) {
                         error_set(err, "Invoke malloc error!");
                         return -1;
                 }
-                sprintf(buf, "%s/%s", XDX_LIB_DRI, filename);
+                sprintf(buf, "%s/%s", lib_dir, filename);
                 libs[(tmpn)++] = buf;
             }
              
