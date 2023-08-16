@@ -844,7 +844,7 @@ library_search_in_dir(struct error *err, char *libs[], const char *lib_dir, cons
         }
         closedir(dir);
         *nlibs = tmpn;
-        return nlibs;
+        return 0;
 }
 
 
