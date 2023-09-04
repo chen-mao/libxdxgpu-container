@@ -756,9 +756,15 @@ symlink_libraries(struct error *err, const struct nvc_container *cnt, const char
                                         return (-1);
                         }
                 } else if (str_has_prefix(lib, "libpciaccess.so")) {
-                        const char *pattern = "^libpciaccess.so\\.so\\.[0-9]+\\.[0-9]+\\.[0-9]+$";
+                        const char *pattern = "^libpciaccess\\.so\\.[0-9]+\\.[0-9]+\\.[0-9]+$";
                         if (macth_target_library(lib, pattern)) {
                                 if (symlink_library(err, paths[i], lib, "libpciaccess.so.0", cnt->uid, cnt->gid ) < 0 )
+                                        return (-1);
+                        }
+                } else if (str_has_prefix(lib, "libvlk_xdxgpu.so")) {
+                        const char *pattern = "^libvlk_xdxgpu\\.so\\.[0-9]+\\.[0-9]+\\.[0-9]+$";
+                        if (macth_target_library(lib, pattern)) {
+                                if (symlink_library(err, paths[i], lib, "libvlk_xdxgpu.so", cnt->uid, cnt->gid ) < 0 )
                                         return (-1);
                         }
                 }

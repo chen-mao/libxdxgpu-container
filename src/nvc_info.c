@@ -93,6 +93,8 @@ static const char * const graphics_libs[] = {
         "libgsl_xdxgpu.so",
         "libdri_xdxgpu.so",
         "libdrm_xdxgpu.so",
+        "libxdxgpu_mesa_wsi.so", 
+        "libvlk_xdxgpu.so"
         "xdxgpu_dri.so",
 };
 
