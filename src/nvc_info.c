@@ -62,7 +62,7 @@ static const char * const utility_libs[] = {
 
 static const char * const compute_libs[] = {
         "libCL_xdxgpu.so",
-        "libdrm.so"
+        "libdrm.so",
 };
 
 static const char * const video_libs[] = {
@@ -93,8 +93,8 @@ static const char * const graphics_libs[] = {
         "libgsl_xdxgpu.so",
         "libdri_xdxgpu.so",
         "libdrm_xdxgpu.so",
-        "libxdxgpu_mesa_wsi.so", 
-        "libvlk_xdxgpu.so"
+        "libxdxgpu_mesa_wsi.so",
+        "libvlk_xdxgpu.so",
         "xdxgpu_dri.so",
 };
 
@@ -139,8 +139,17 @@ select_libraries(struct error *err, void *ptr, const char *root, const char *ori
 //         if (rv)
 //                 log_infof((orig_path == NULL) ? "%s %s" : "%s %s over %s", "selecting", alt_path, orig_path);
 //         else
-//                 log_infof("skipping %s", alt_path);
-        log_infof((orig_path == NULL) ? "%s %s" : "%s %s over %s", "selecting", alt_path, orig_path);
+//                 log_infof("skipping %s", altW_path);
+
+        if (orig_path != NULL && str_has_prefix(orig_path, "/opt/xdxgpu/lib/x86_64-linux-gnu") == true && 
+            str_has_prefix(alt_path, "/usr/lib/x86_64-linux-gnu") == true) {
+                log_infof("skipping %s", alt_path);        
+                rv = false;
+        }
+        else {
+                log_infof((orig_path == NULL) ? "%s %s" : "%s %s over %s", "selecting", alt_path, orig_path);
+                rv = true;
+        }
         elftool_close(&et);
         return (rv);
 }
