@@ -890,13 +890,11 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
                 free(tmp);
         }
         if (cnt->flags & OPT_VIDEO_LIBS || cnt->flags & OPT_GRAPHICS_LIBS) {
-                log_infof("**dris_dir: %s", cnt->cfg.dris_dir);
                 if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, cnt->cfg.dris_dir, dri_libs, nlibs)) == NULL){
                         goto fail;
                 }
                 for (size_t i = 0; i < nlibs; ++i)
                         free(dri_libs[i]);
-                log_info("done");
                 free(tmp);
         }
         if (!(cnt->flags & OPT_NO_CGROUPS)) {
