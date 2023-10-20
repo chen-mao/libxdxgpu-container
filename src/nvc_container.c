@@ -3,6 +3,8 @@
  */
 
 #include <sys/types.h>
+#include <sys/utsname.h>
+#include <sys/stat.h>
 
 #include <inttypes.h>
 #include <limits.h>
@@ -124,8 +126,11 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
         const char *bins_dir = cfg->bins_dir;
         const char *libs_dir = cfg->libs_dir;
         const char *libs32_dir = cfg->libs32_dir;
+        const char *dris_dir = cfg->dris_dir;
         const char *cudart_dir = cfg->cudart_dir;
         const char *ldconfig = cfg->ldconfig;
+        struct utsname systemInfo;
+        struct stat st;
         char *rootfs;
         int multiarch, ret;
         int rv = -1;
@@ -186,6 +191,28 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
                         }
                 }
         }
+        if (dris_dir == NULL) {
+                if (uname(&systemInfo) != 0) {
+                        error_set(err, "uname");
+                        goto fail;
+                }
+                if (str_has_suffix(systemInfo.machine, "x86_64") && \
+                    stat("/etc/apt", &st) == 0 && S_ISDIR(st.st_mode)) {
+                        dris_dir = XDX_LIB_DRI_X86_DEB;
+                }
+                else if (str_has_suffix(systemInfo.machine, "aarch64") && \
+                    stat("/etc/apt", &st) == 0 && S_ISDIR(st.st_mode)) {
+                        dris_dir = XDX_LIB_DRI_ARM_DEB;
+                }    
+                else if (str_has_suffix(systemInfo.machine, "x86_64") && \
+                    stat("/etc/rpm", &st) == 0 && S_ISDIR(st.st_mode)) {
+                        dris_dir = XDX_LIB_DRI_X86_RPM;
+                }           
+                else {
+                        log_errf("Unsupported architecture %s and system version.\n", systemInfo.machine);
+                        goto fail;
+                }
+        }
         if (cudart_dir == NULL)
                 cudart_dir = CUDA_RUNTIME_DIR;
         if (ldconfig == NULL) {
@@ -206,6 +233,8 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
                 goto fail;
         if ((cnt->cfg.libs32_dir = xstrdup(err, libs32_dir)) == NULL)
                 goto fail;
+        if ((cnt->cfg.dris_dir = xstrdup(err, dris_dir)) == NULL)
+                goto fail;
         if ((cnt->cfg.cudart_dir = xstrdup(err, cudart_dir)) == NULL)
                 goto fail;
         if ((cnt->cfg.ldconfig = xstrdup(err, ldconfig)) == NULL)
@@ -225,7 +254,7 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
 
         if (validate_context(ctx) < 0)
                 return (NULL);
-        if (validate_args(ctx, cfg != NULL && cfg->pid > 0 && cfg->rootfs != NULL && !str_empty(cfg->rootfs) && cfg->rootfs[0] == '/' &&
+        if (validate_args(ctx, cfg != NULL && cfg->pid > 0 && cfg->rootfs != NULL && !str_empty(cfg->rootfs) && cfg->rootfs[0] == '/' && !str_empty(cfg->dris_dir) &&
             !str_empty(cfg->bins_dir) && !str_empty(cfg->libs_dir) && !str_empty(cfg->libs32_dir) && !str_empty(cfg->cudart_dir) && !str_empty(cfg->ldconfig)) < 0)
                 return (NULL);
         if (opts == NULL)
@@ -265,6 +294,7 @@ nvc_container_new(struct nvc_context *ctx, const struct nvc_container_config *cf
         log_infof("setting bins directory to %s", cnt->cfg.bins_dir);
         log_infof("setting libs directory to %s", cnt->cfg.libs_dir);
         log_infof("setting libs32 directory to %s", cnt->cfg.libs32_dir);
+        log_infof("setting dris directory to %s", cnt->cfg.dris_dir);
         log_infof("setting cudart directory to %s", cnt->cfg.cudart_dir);
         log_infof("setting ldconfig to %s%s", cnt->cfg.ldconfig, (cnt->cfg.ldconfig[0] == '@') ? " (host relative)" : "");
         log_infof("setting mount namespace to %s", cnt->mnt_ns);
@@ -288,6 +318,7 @@ nvc_container_free(struct nvc_container *cnt)
         free(cnt->cfg.bins_dir);
         free(cnt->cfg.libs_dir);
         free(cnt->cfg.libs32_dir);
+        free(cnt->cfg.dris_dir);
         free(cnt->cfg.cudart_dir);
         free(cnt->cfg.ldconfig);
         free(cnt->mnt_ns);

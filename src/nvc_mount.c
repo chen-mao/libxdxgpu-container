@@ -5,8 +5,6 @@
 #include <sys/sysmacros.h>
 #include <sys/mount.h>
 #include <sys/types.h>
-#include <sys/utsname.h>
-#include <sys/stat.h>
 
 #include <errno.h>
 #include <libgen.h>
@@ -863,42 +861,12 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
         char *pci_mnt = NULL;
         char *ld_config_mnt = NULL;
         const char **tmp;
-        struct utsname systemInfo;
 
         const char *pattern = "^xdxgpu_dr[iv].*\\.so$";
         char *dri_libs[XDX_VIDEO_LIB_NUM];
         size_t nlibs;
-        const char *dri_lib_path;
-        const char *dri_mount_target;
-        
-        if (uname(&systemInfo) != 0) {
-                error_set(&ctx->err, "uname");
-                return -1;
-        }
 
-        // TODO SUPPORT RPM IMAGE
-        struct stat st;
-        if (str_has_suffix(systemInfo.machine, "x86_64") && \
-            stat("/etc/apt", &st) == 0 && S_ISDIR(st.st_mode)) {
-                dri_lib_path = XDX_LIB_DRI_X86_DEB;
-                dri_mount_target = XDX_LIB_DRI_X86_DEB;
-        }
-        else if (str_has_suffix(systemInfo.machine, "aarch64") && \
-                 stat("/etc/apt", &st) == 0 && S_ISDIR(st.st_mode)) {
-                dri_lib_path = XDX_LIB_DRI_ARM_DEB;
-                dri_mount_target = XDX_LIB_DRI_ARM_DEB;
-        }    
-        else if (str_has_suffix(systemInfo.machine, "x86_64") && \
-                 stat("/etc/rpm", &st) == 0 && S_ISDIR(st.st_mode)) {
-                dri_lib_path = XDX_LIB_DRI_X86_RPM;
-                dri_mount_target = XDX_LIB_DRI_X86_RPM;
-        }           
-        else {
-                log_errf("Unsupported architecture %s and system version.\n", systemInfo.machine);
-                return -1;
-        }
-
-        if (library_search_in_dir(&ctx->err, dri_libs, dri_lib_path, pattern, &nlibs) < 0) {
+        if (library_search_in_dir(&ctx->err, dri_libs, cnt->cfg.dris_dir, pattern, &nlibs) < 0) {
                 log_errf("%s", ctx->err.msg);
                 return -1;
         }
@@ -922,9 +890,13 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
                 free(tmp);
         }
         if (cnt->flags & OPT_VIDEO_LIBS || cnt->flags & OPT_GRAPHICS_LIBS) {
-                if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, dri_mount_target, dri_libs, nlibs)) == NULL){
+                log_infof("**dris_dir: %s", cnt->cfg.dris_dir);
+                if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, cnt->cfg.dris_dir, dri_libs, nlibs)) == NULL){
                         goto fail;
                 }
+                for (size_t i = 0; i < nlibs; ++i)
+                        free(dri_libs[i]);
+                log_info("done");
                 free(tmp);
         }
         if (!(cnt->flags & OPT_NO_CGROUPS)) {

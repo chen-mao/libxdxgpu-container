@@ -118,6 +118,7 @@ struct nvc_container_config {
         char *bins_dir;
         char *libs_dir;
         char *libs32_dir;
+        char *dris_dir;
         char *cudart_dir;
         char *ldconfig;
 };
