@@ -192,6 +192,7 @@ copy_config(struct error *err, struct nvc_container *cnt, const struct nvc_conta
                 }
         }
         if (dris_dir == NULL) {
+                // process the path of dris according to the type of the host.
                 if (uname(&systemInfo) != 0) {
                         error_set(err, "uname");
                         goto fail;
