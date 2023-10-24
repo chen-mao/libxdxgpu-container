@@ -49,7 +49,7 @@
 #elif defined(__aarch64__)
 # define LIB_ARCH                 LD_AARCH64_LIB64
 # define LIB32_ARCH               LD_ARM_LIBHF
-# define USR_LIB_MULTIARCH_DIR    "/usr/lib/aarch64-linux-gnu/"
+# define XDX_LIB_MULTIARCH_DIR    "/usr/lib/aarch64-linux-gnu/"
 # define USR_LIB32_MULTIARCH_DIR  "/var/empty"
 # if !defined(__NR_execveat)
 #  define __NR_execveat 387

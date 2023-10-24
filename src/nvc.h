@@ -115,9 +115,10 @@ struct nvc_device_info {
 struct nvc_container_config {
         pid_t pid;
         char *rootfs;
-        char *bins_dir;
-        char *libs_dir;
-        char *libs32_dir;
+        char *bins_dir;       // The bins mount point in container
+        char *libs_dir;       // The libs mount point in container
+        char *libs32_dir;     // The libs32 mount point in container
+        char *dris_dir;       // The dri's path in Host 
         char *cudart_dir;
         char *ldconfig;
 };

@@ -3,6 +3,12 @@ FROM ${BASEIMAGE}
 
 SHELL ["/bin/bash", "-c"]
 
+RUN sed -e 's|^mirrorlist=|#mirrorlist=|g' \
+        -e 's|^#baseurl=http://mirror.centos.org/centos|baseurl=https://mirrors.tuna.tsinghua.edu.cn/centos|g' \
+        -i.bak \
+        /etc/yum.repos.d/CentOS-*.repo
+RUN yum makecache
+
 ARG OS_VERSION
 RUN if [ "${OS_VERSION}" = "8" ]; then \
         yum --enablerepo=powertools install -y \
@@ -10,7 +16,8 @@ RUN if [ "${OS_VERSION}" = "8" ]; then \
             libseccomp-devel; \
     else \
         yum install -y \
-            libseccomp-devel; \
+            libseccomp-devel \
+            applydeltarpm; \
     fi
 
 RUN yum install -y \
@@ -47,15 +54,6 @@ ENV WITH_NVCGO=${WITH_NVCGO}
 ENV WITH_LIBELF=${WITH_LIBELF}
 ENV WITH_TIRPC=${WITH_TIRPC}
 ENV WITH_SECCOMP=${WITH_SECCOMP}
-
-RUN if [ "$WITH_LIBELF" = "no" ]; then \
-        arch=${OS_ARCH} && \
-        cd $(mktemp -d) && \
-        curl -fsSL -O https://mirrors.kernel.org/mageia/distrib/7.1/${arch}/media/core/release/pmake-1.45-17.mga7.${arch}.rpm && \
-        curl -fsSL -O https://mirrors.kernel.org/mageia/distrib/7.1/${arch}/media/core/release/bmake-20181221-1.mga7.${arch}.rpm && \
-        rpm -i *.rpm && \
-        rm -rf $PWD \
-    ; fi
 
 WORKDIR /tmp/libxdxct-container
 COPY . .

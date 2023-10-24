@@ -314,8 +314,6 @@ lookup_libraries(struct error *err, struct dxcore_context *dxcore, struct nvc_dr
         ptr = array_append(ptr, compute_libs, nitems(compute_libs));
         ptr = array_append(ptr, video_libs, nitems(video_libs));
         ptr = array_append(ptr, graphics_libs, nitems(graphics_libs));
-        // TODO
-        // log_infof("****239:The root path is %s", root);
 
         if (dxcore->initialized)
                 ptr = array_append(ptr, dxcore_libs, nitems(dxcore_libs));

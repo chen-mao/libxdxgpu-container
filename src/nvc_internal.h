@@ -47,8 +47,10 @@
 #define NV_APP_PROFILE_DIR       "/etc/nvidia/nvidia-application-profiles-rc.d"
 #define NV_CAPS_MIG_MINORS_PATH  NV_CAPS_PROC_DRIVER "/mig-minors"
 // #define XDX_SYS_CLASS_DRM        "/sys/class/drm"
-#define XDX_LIB_DRI              "/usr/lib/x86_64-linux-gnu/dri"
-#define XDX_VIDEO_LIB_NUM        10
+#define XDX_LIB_DRI_X86_DEB      "/usr/lib/x86_64-linux-gnu/dri"
+#define XDX_LIB_DRI_ARM_DEB      "/usr/lib/aarch64-linux-gnu/dri"
+#define XDX_LIB_DRI_X86_RPM      "/usr/lib64/dri"
+#define XDX_VIDEO_LIB_NUM        4
 #define LD_CONFIG_DIR            "/etc/ld.so.conf.d"
 #define SMI_FRONT_DIR            "/usr/lib/python3/dist-packages/xdxsmi"
 #define NV_PROC_DRIVER_CAPS    NV_PROC_DRIVER "/capabilities"

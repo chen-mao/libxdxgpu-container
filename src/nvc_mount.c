@@ -866,11 +866,11 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
         char *dri_libs[XDX_VIDEO_LIB_NUM];
         size_t nlibs;
 
-        if (library_search_in_dir(&ctx->err, dri_libs, XDX_LIB_DRI, pattern, &nlibs) < 0) {
+        if (library_search_in_dir(&ctx->err, dri_libs, cnt->cfg.dris_dir, pattern, &nlibs) < 0) {
                 log_errf("%s", ctx->err.msg);
                 return -1;
         }
-        
+
         int rv = -1;
         if (!(cnt->flags & OPT_NO_DEVBIND)) {
                 if ((dev_mnt = mount_device(&ctx->err, ctx->cfg.root, cnt, &dev->node)) == NULL)
@@ -890,9 +890,11 @@ device_mount_native(struct nvc_context *ctx, const struct nvc_container *cnt, co
                 free(tmp);
         }
         if (cnt->flags & OPT_VIDEO_LIBS || cnt->flags & OPT_GRAPHICS_LIBS) {
-                if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, XDX_LIB_DRI, dri_libs, nlibs)) == NULL){
+                if ((tmp = (const char **)mount_files(&ctx->err, ctx->cfg.root, cnt, cnt->cfg.dris_dir, dri_libs, nlibs)) == NULL){
                         goto fail;
                 }
+                for (size_t i = 0; i < nlibs; ++i)
+                        free(dri_libs[i]);
                 free(tmp);
         }
         if (!(cnt->flags & OPT_NO_CGROUPS)) {
