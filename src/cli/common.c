@@ -172,11 +172,12 @@ select_gpu_device(
         *gpu = NULL;
 
         // Check if dev matches a full GPU UUID.
-        for (size_t i=0; i < available->ngpus; i++) {
-                char *gpus_uuid_tmp = dev+2; 
+        for (size_t i = 0; i < available->ngpus; i++) {
+                // The matching uuid needs to be stripped of 0x.
+                char *gpus_uuid_tmp = dev + 2;  
+                printf("available->gpus[i].uuid: %s\n", available->gpus[i].uuid);
+                printf("required_gpus__tmp: %s", gpus_uuid_tmp);
                 if (strlen(available->gpus[i].uuid) != strlen(gpus_uuid_tmp)) {
-                        printf("available->gpus[i].uuid: %s", available->gpus[i].uuid);
-                        printf("gpus_uuid_tmp: %s", gpus_uuid_tmp);
                         continue;
                 }
                 if (! strcasecmp(available->gpus[i].uuid, gpus_uuid_tmp)) {

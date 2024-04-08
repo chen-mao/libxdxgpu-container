@@ -621,7 +621,6 @@ init_nvc_device(struct nvc_context *ctx, unsigned int index, struct nvc_device *
                 // if (fill_mig_device_info(ctx, mig_enabled, dev, gpu) < 0)
                 //     goto fail;
 
-                log_infof("listing device %s : %s ", gpu->node.path, gpu->busid);
         }
 
         return 0;

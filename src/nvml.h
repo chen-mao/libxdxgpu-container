@@ -294,7 +294,7 @@ xdxml_return_t xdxml_device_get_product_name(xdx_device_t device,char *device_na
  * @return
  *         - \ref XDXML_SUCCESS         successful completion          
  */
-xdxml_return_t xdxml_device_get_uuid(xdx_device_t device);
+xdxml_return_t xdxml_device_get_uuid(xdx_device_t device, char *uuid);
 // nvmlReturn_t DECLDIR nvmlDeviceGetUUID(nvmlDevice_t device, char *uuid, unsigned int length);
 
 /**

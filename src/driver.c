@@ -446,7 +446,7 @@ driver_get_device_busid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_busid_r
         memset(res, 0, sizeof(*res));
         if (call_xdxml(err, ctx, xdxml_device_get_pci_info, handle->xdxml, &pci) < 0)
                 goto fail;
-
+        
         if (xasprintf(err, &res->driver_get_device_busid_res_u.busid, "%08lx:%02lx:%02lx.0", pci.domain, pci.bus, pci.device) < 0)
                 goto fail;
         return (true);
@@ -483,9 +483,9 @@ driver_get_device_uuid_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_uuid_res
         char buf[NVML_DEVICE_UUID_V2_BUFFER_SIZE];
 
         memset(res, 0, sizeof(*res));
-        if (call_xdxml(err, ctx, xdxml_device_get_uuid, handle->xdxml) < 0)
+        if (call_xdxml(err, ctx, xdxml_device_get_uuid, handle->xdxml, buf) < 0)
                 goto fail;
-        if ((res->driver_get_device_uuid_res_u.uuid = xstrdup(err, handle->xdxml->uuid)) == NULL)
+        if ((res->driver_get_device_uuid_res_u.uuid = xstrdup(err, buf)) == NULL)
                 goto fail;
         return (true);
 
