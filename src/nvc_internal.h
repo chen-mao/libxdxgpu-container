@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
 #ifndef HEADER_NVC_INTERNAL_H
 #define HEADER_NVC_INTERNAL_H
 
@@ -24,7 +20,7 @@
 #include "dxcore.h"
 
 #define SONAME_LIBCUDA  "libcuda.so.1"
-#define SONAME_LIBNVML  "libxdxgpu-ml.so"
+#define SONAME_LIBXDXML  "libxdxgpu-ml.so"
 #define SONAME_LIBNVCGO "libxdxct-container-go.so.1"
 
 #define NV_DEVICE_MAJOR          226
@@ -32,20 +28,6 @@
 #define NV_MODESET_DEVICE_MINOR  254
 #define NV_DEVICE_PATH           "/dev/dri/card%d"
 #define XDX_RENDER_DEVICE_PATH   "/dev/dri/renderD128"
-#define NV_CTL_DEVICE_PATH       _PATH_DEV "nvidiactl"
-#define NV_UVM_DEVICE_PATH       _PATH_DEV "nvidia-uvm"
-#define NV_UVM_TOOLS_DEVICE_PATH _PATH_DEV "nvidia-uvm-tools"
-#define NV_MODESET_DEVICE_PATH   _PATH_DEV "nvidia-modeset"
-#define NV_CAPS_DEVICE_DIR       _PATH_DEV "nvidia-caps"
-#define NV_CAPS_DEVICE_PATH      NV_CAPS_DEVICE_DIR "/nvidia-cap%d"
-#define NV_PERSISTENCED_SOCKET   _PATH_VARRUN "nvidia-persistenced/socket"
-#define NV_FABRICMANAGER_SOCKET  _PATH_VARRUN "nvidia-fabricmanager/socket"
-#define NV_MPS_PIPE_DIR          _PATH_TMP "nvidia-mps"
-#define NV_PROC_DRIVER           "/proc/driver/nvidia"
-#define NV_CAPS_PROC_DRIVER      "/proc/driver/nvidia-caps"
-#define NV_UVM_PROC_DRIVER       "/proc/driver/nvidia-uvm"
-#define NV_APP_PROFILE_DIR       "/etc/nvidia/nvidia-application-profiles-rc.d"
-#define NV_CAPS_MIG_MINORS_PATH  NV_CAPS_PROC_DRIVER "/mig-minors"
 // #define XDX_SYS_CLASS_DRM        "/sys/class/drm"
 #define XDX_LIB_DRI_X86_DEB      "/usr/lib/x86_64-linux-gnu/dri"
 #define XDX_LIB_DRI_ARM_DEB      "/usr/lib/aarch64-linux-gnu/dri"
@@ -53,15 +35,6 @@
 #define XDX_VIDEO_LIB_NUM        4
 #define LD_CONFIG_DIR            "/etc/ld.so.conf.d"
 #define SMI_FRONT_DIR            "/usr/lib/python3/dist-packages/xdxsmi"
-#define NV_PROC_DRIVER_CAPS    NV_PROC_DRIVER "/capabilities"
-#define NV_MIG_CAPS_PATH       NV_PROC_DRIVER_CAPS "/mig"
-#define NV_GPU_CAPS_PATH       NV_PROC_DRIVER_CAPS "/gpu%d"
-#define NV_GPU_MIG_CAPS_PATH   NV_GPU_CAPS_PATH "/mig"
-#define NV_GPU_INST_CAPS_PATH  NV_GPU_MIG_CAPS_PATH "/gi%d"
-#define NV_COMP_INST_CAPS_PATH NV_GPU_INST_CAPS_PATH "/ci%d"
-#define NV_MIG_ACCESS_FILE     "access"
-#define NV_MIG_CONFIG_FILE     "config"
-#define NV_MIG_MONITOR_FILE    "monitor"
 
 #define CUDA_RUNTIME_DIR         "/usr/local/cuda"
 

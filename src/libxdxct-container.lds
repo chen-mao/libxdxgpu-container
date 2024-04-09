@@ -34,11 +34,6 @@ VERSION {
             nvc_driver_mount;
             nvc_device_mount;
             nvc_nvcaps_style;
-            nvc_nvcaps_device_from_proc_path;
-            nvc_mig_device_access_caps_mount;
-            nvc_mig_config_global_caps_mount;
-            nvc_mig_monitor_global_caps_mount;
-            nvc_device_mig_caps_mount;
 
             __ubsan_default_options;
         local:

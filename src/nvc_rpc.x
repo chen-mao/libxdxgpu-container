@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
 %#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 %#pragma GCC diagnostic ignored "-Wsign-conversion"
 %#pragma GCC diagnostic ignored "-Wunused-variable"

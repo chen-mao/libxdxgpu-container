@@ -1,10 +1,8 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
 #include <sys/types.h>
 
 #include <inttypes.h>
+
+#include <limits.h>
 
 #include "nvml.h"
 
@@ -25,11 +23,6 @@ struct mig_device {
         nvmlDevice_t nvml;
 };
 
-// static struct driver_xdx_device {
-//         xdx_device_t xdxml;
-//         struct mig_device mig[MAX_MIG_DEVICES];
-// } xdx_device_handles[MAX_DEVICES];
-
 static struct driver_device {
         nvmlDevice_t nvml;
         struct mig_device mig[MAX_MIG_DEVICES];
@@ -39,10 +32,10 @@ static struct driver {
         struct rpc rpc;
         bool initialized;
         char root[PATH_MAX];
-        char nvml_path[PATH_MAX];
+        char xdxml_path[PATH_MAX];
         uid_t uid;
         gid_t gid;
-        void *nvml_dl;
+        void *xdxml_dl;
 } global_driver_context;
 
 static struct driverDevice {
@@ -55,10 +48,10 @@ static struct driverDevice {
         nvmlReturn_t r_;                                                                               \
                                                                                                        \
         dlerror();                                                                                     \
-        u_.ptr = dlsym((ctx)->nvml_dl, #sym);                                                          \
+        u_.ptr = dlsym((ctx)->xdxml_dl, #sym);                                                          \
         r_ = (dlerror() == NULL) ? (*u_.fn)(__VA_ARGS__) : NVML_ERROR_FUNCTION_NOT_FOUND;              \
         if (r_ != NVML_SUCCESS)                                                                        \
-                error_set_nvml((err), (ctx)->nvml_dl, r_, "nvml error");                               \
+                error_set_nvml((err), (ctx)->xdxml_dl, r_, "nvml error");                               \
         (r_ == NVML_SUCCESS) ? 0 : -1;                                                                 \
 })
 
@@ -67,10 +60,10 @@ static struct driverDevice {
         xdxml_return_t r_;                                                                             \
                                                                                                        \
         dlerror();                                                                                     \
-        u_.ptr = dlsym((ctx)->nvml_dl, #sym);                                                          \
+        u_.ptr = dlsym((ctx)->xdxml_dl, #sym);                                                          \
         r_ = (dlerror() == NULL) ? (*u_.fn)(__VA_ARGS__) : XDXML_ERROR_FUNCTION_NOT_FOUND;             \
         if (r_ != XDXML_SUCCESS)                                                                       \
-                error_set_nvml((err), (ctx)->nvml_dl, r_, "xdxml error");                              \
+                error_set_nvml((err), (ctx)->xdxml_dl, r_, "xdxml error");                              \
         (r_ == XDXML_SUCCESS) ? 0 : -1;                                                                \
 })
 
@@ -106,16 +99,16 @@ driver_init(struct error *err, struct dxcore_context *dxcore, const char *root, 
         *ctx = (struct driver){
                 .rpc = {0},
                 .root = {0},
-                .nvml_path = SONAME_LIBNVML,
+                .xdxml_path = SONAME_LIBXDXML,
                 .uid = uid,
                 .gid = gid,
-                .nvml_dl = NULL,
+                .xdxml_dl = NULL,
         };
         strcpy(ctx->root, root);
 
         if (dxcore->initialized) {
-                memset(ctx->nvml_path, 0, strlen(ctx->nvml_path));
-                if (path_join(err, ctx->nvml_path, dxcore->adapterList[0].pDriverStorePath, SONAME_LIBNVML) < 0)
+                memset(ctx->xdxml_path, 0, strlen(ctx->xdxml_path));
+                if (path_join(err, ctx->xdxml_path, dxcore->adapterList[0].pDriverStorePath, SONAME_LIBXDXML) < 0)
                         goto fail;
         }
 
@@ -152,7 +145,7 @@ driver_init_1_svc(ptr_t ctxptr, driver_init_res *res, maybe_unused struct svc_re
                 if (xdlopen(err, "libpthread.so.0", RTLD_NOW) == NULL)
                         goto fail;
 #if defined(__aarch64__)
-                /* libnvidia-ml.so.1 depends on libgcc_s.so.1 in its arm64 build. Not
+                /* libxdxct-ml.so.1 depends on libgcc_s.so.1 in its arm64 build. Not
                  * preloading here will cause unresolved symbols when chrooting into the
                  * container environment
                  */
@@ -181,7 +174,7 @@ driver_init_1_svc(ptr_t ctxptr, driver_init_res *res, maybe_unused struct svc_re
                  goto fail;
 
         /* Load and initialize the NVML library. */
-        if ((ctx->nvml_dl = xdlopen(err, ctx->nvml_path, RTLD_NOW)) == NULL)
+        if ((ctx->xdxml_dl = xdlopen(err, ctx->xdxml_path, RTLD_NOW)) == NULL)
                 goto fail;
         if (call_xdxml(err, ctx, xdxml_init) < 0)
                 goto fail;
@@ -227,7 +220,7 @@ driver_shutdown_1_svc(ptr_t ctxptr, driver_shutdown_res *res, maybe_unused struc
  fail:
         if (rv < 0)
                 error_to_xdr(err, res);
-        xdlclose(NULL, ctx->nvml_dl);
+        xdlclose(NULL, ctx->xdxml_dl);
         return (true);
 }
 
@@ -555,69 +548,13 @@ driver_get_device_brand_1_svc(ptr_t ctxptr, ptr_t dev, driver_get_device_brand_r
 {
         struct error *err = (struct error[]){0};
         struct driver *ctx = (struct driver *)ctxptr;
-        struct driver_device *handle = (struct driver_device *)dev;
-        nvmlBrandType_t brand;
-        const char *buf;
+        struct driverDevice *handle = (struct driverDevice *)dev;
+        // nvmlBrandType_t brand;
+        char buf[NVML_DEVICE_NAME_BUFFER_SIZE];
 
         memset(res, 0, sizeof(*res));
-        if (call_nvml(err, ctx, nvmlDeviceGetBrand, handle->nvml, &brand) < 0)
+        if (call_xdxml(err, ctx, xdxml_device_get_product_name, handle->xdxml, buf) < 0)
                 goto fail;
-        switch (brand) {
-        case NVML_BRAND_QUADRO:
-                buf = "Quadro";
-                break;
-        case NVML_BRAND_TESLA:
-                buf = "Tesla";
-                break;
-        case NVML_BRAND_NVS:
-                buf = "NVS";
-                break;
-        case NVML_BRAND_GRID:
-                buf = "GRID";
-                break;
-        case NVML_BRAND_GEFORCE:
-                buf = "GeForce";
-                break;
-        case NVML_BRAND_TITAN:
-                buf = "TITAN";
-                break;
-        case NVML_BRAND_NVIDIA_VAPPS:
-                buf = "VApps";
-                break;
-        case NVML_BRAND_NVIDIA_VPC:
-                buf = "VPC";
-                break;
-        case NVML_BRAND_NVIDIA_VCS:
-                buf = "VCS";
-                break;
-        case NVML_BRAND_NVIDIA_VWS:
-                buf = "VWS";
-                break;
-        case NVML_BRAND_NVIDIA_CLOUD_GAMING:
-                buf = "CloudGaming";
-                break;
-        // Deprecated in favor of NVML_BRAND_NVIDIA_CLOUD_GAMING
-        //case NVML_BRAND_NVIDIA_VGAMING:
-        //        buf = "VGaming";
-        //        break;
-        case NVML_BRAND_QUADRO_RTX:
-                buf = "QuadroRTX";
-                break;
-        case NVML_BRAND_NVIDIA_RTX:
-                buf = "NvidiaRTX";
-                break;
-        case NVML_BRAND_NVIDIA:
-                buf = "Nvidia";
-                break;
-        case NVML_BRAND_GEFORCE_RTX:
-                buf = "GeForceRTX";
-                break;
-        case NVML_BRAND_TITAN_RTX:
-                buf = "TitanRTX";
-                break;
-        default:
-                buf = "Unknown";
-        }
         if ((res->driver_get_device_brand_res_u.brand = xstrdup(err, buf)) == NULL)
                 goto fail;
         return (true);

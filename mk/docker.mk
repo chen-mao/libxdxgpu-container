@@ -1,18 +1,3 @@
-# Copyright (c) 2017-2021, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-
 # Version of golang to use in docker specific builds.
 GOLANG_VERSION := 1.17.1
 
@@ -30,6 +15,8 @@ PLATFORM     ?= $(shell uname -m)
 DIST_DIR     ?= $(CURDIR)/dist
 MAKE_DIR     ?= $(CURDIR)/mk
 REVISION 	 ?= $(shell git rev-parse HEAD)
+
+include $(CURDIR)/versions.mk
 
 # Supported OSs by architecture
 AMD64_TARGETS := ubuntu20.04 ubuntu16.04 debian10 debian9
@@ -99,14 +86,14 @@ docker-all: $(AMD64_TARGETS) $(X86_64_TARGETS) \
 --%: TARGET_PLATFORM = $(*)
 --%: VERSION = $(patsubst $(OS)%-$(ARCH),%,$(TARGET_PLATFORM))
 --%: BASEIMAGE = $(OS):$(VERSION)
---%: BUILDIMAGE = nvidia/$(LIB_NAME)/$(OS)$(VERSION)-$(ARCH)
+--%: BUILDIMAGE = xdxct/$(LIB_NAME)/$(OS)$(VERSION)-$(ARCH)
 --%: DOCKERFILE = $(MAKE_DIR)/Dockerfile.$(OS)
 --%: ARTIFACTS_DIR = $(DIST_DIR)/$(OS)$(VERSION)/$(ARCH)
 --%: docker-build-%
 	@
 
 # Define verify targets to run a minimal sanity check that everything has built
-# and runs correctly for a given OS on amd64/x86_64. Requires a working NVIDIA
+# and runs correctly for a given OS on amd64/x86_64. Requires a working XDXCT
 # driver installation on a native amd64/x86_64 machine.
 $(patsubst %, %-verify, $(AMD64_TARGETS)): ARCH := amd64
 $(patsubst %, %-verify, $(AMD64_TARGETS)): %-verify: --verify-%
@@ -147,7 +134,7 @@ docker-amd64-verify: $(patsubst %, %-verify, $(AMD64_TARGETS)) \
 docker-build-%: $(ARTIFACTS_DIR)
 	@echo "Building for $(TARGET_PLATFORM)"
 	$(DOCKER) pull --platform=linux/$(ARCH) $(BASEIMAGE)
-	DOCKER_BUILDKIT=1 \
+	DOCKER_BUILDKIT=0 \
 	$(DOCKER) build \
 	    --platform=linux/$(ARCH) \
 	    --progress=plain \
@@ -162,11 +149,15 @@ docker-build-%: $(ARTIFACTS_DIR)
 	    --build-arg CFLAGS="$(CFLAGS)" \
 	    --build-arg LDLIBS="$(LDLIBS)" \
 	    --build-arg REVISION="$(REVISION)" \
+	    --build-arg LIB_VERSION="$(LIB_VERSION)" \
+	    --build-arg LIB_TAG="$(LIB_TAG)" \
+	    --build-arg LIB_BUILD="$(LIB_BUILD)" \
 	    $(EXTRA_BUILD_ARGS) \
 	    --tag $(BUILDIMAGE) \
 	    --file $(DOCKERFILE) .
 	$(DOCKER) run \
 	    --platform=linux/$(ARCH) \
+	    --rm \
 	    -e TAG \
 	    -v $(ARTIFACTS_DIR):/dist \
 	    $(BUILDIMAGE)
@@ -175,13 +166,13 @@ docker-verify-%: %
 	@echo "Verifying for $(TARGET_PLATFORM)"
 	$(DOCKER) run \
 	    --privileged \
-	    --runtime=nvidia  \
-	    -e NVIDIA_VISIBLE_DEVICES=all \
+	    --runtime=xdxct  \
+	    -e XDXCT_VISIBLE_DEVICES=all \
 	    --rm $(BUILDIMAGE) \
 	    bash -c "make install; LD_LIBRARY_PATH=/usr/local/lib/  libxdxct-container -k -d /dev/tty info"
 
 docker-clean:
-	IMAGES=$$(docker images "nvidia/$(LIB_NAME)/*" --format="{{.ID}}"); \
+	IMAGES=$$(docker images "xdxct/$(LIB_NAME)/*" --format="{{.ID}}"); \
 	if [ "$${IMAGES}" != "" ]; then \
 	    docker rmi -f $${IMAGES}; \
 	fi

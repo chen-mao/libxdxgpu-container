@@ -1,8 +1,3 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
-
 #include <inttypes.h>
 #include <limits.h>
 #include <stdbool.h>

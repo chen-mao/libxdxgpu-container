@@ -1,12 +1,7 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
 #include <sys/sysmacros.h>
 
 #include <errno.h>
 #include <limits.h>
-#include <nvidia-modprobe-utils.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,16 +35,6 @@ static int lookup_binaries(struct error *, struct dxcore_context *, struct nvc_d
 static int lookup_devices(struct error *, struct dxcore_context *, struct nvc_driver_info *, const char *, int32_t);
 static int fill_mig_device_info(struct nvc_context *, bool mig_enabled, struct driver_device *, struct nvc_device *);
 static void clear_mig_device_info(struct nvc_mig_device_info *);
-
-/*
- * Display libraries are not needed.
- *
- * "libnvidia-gtk2.so" // GTK2 (used by nvidia-settings)
- * "libnvidia-gtk3.so" // GTK3 (used by nvidia-settings)
- * "libnvidia-wfb.so"  // Wrapped software rendering module for X server
- * "nvidia_drv.so"     // Driver module for X server
- * "libglx.so"         // GLX extension module for X server
- */
 
 static const char * const utility_bins[] = {
         "xdxsmi",
@@ -110,39 +95,15 @@ select_libraries(struct error *err, void *ptr, const char *root, const char *ori
 {
         char path[PATH_MAX];
         // struct nvc_driver_info *info = ptr;
-        struct elftool et;
+        // struct elftool et;
         // char *lib;
         int rv = true;
 
         if (path_join(err, path, root, alt_path) < 0)
                 return (-1);
-        elftool_init(&et, err);
-        if (elftool_open(&et, path) < 0)
-                return (-1);
-
-        // lib = basename(alt_path);
-        // if (str_has_prefix(lib, "libnvidia-tls.so")) {
-        //         /* Only choose the TLS library using the new ABI (kernel 2.3.99). */
-        //         if ((rv = elftool_has_abi(&et, (uint32_t[3]){0x02, 0x03, 0x63})) != true)
-        //                 goto done;
-        // }
-        // /* Check the driver version. */
-
-        // if ((rv = str_has_suffix(lib, info->nvrm_version)) == false)
-        //         goto done;
-        // if (str_array_match_prefix(lib, graphics_libs_compat, nitems(graphics_libs_compat))) {
-        //         /* Only choose OpenGL/EGL libraries issued by NVIDIA. */
-        //         if ((rv = elftool_has_dependency(&et, "libnvidia-glcore.so")) != false)
-        //                 goto done;
-        //         if ((rv = elftool_has_dependency(&et, "libnvidia-eglcore.so")) != false)
-        //                 goto done;
-        // }
-
-//  done:
-//         if (rv)
-//                 log_infof((orig_path == NULL) ? "%s %s" : "%s %s over %s", "selecting", alt_path, orig_path);
-//         else
-//                 log_infof("skipping %s", altW_path);
+        // elftool_init(&et, err);
+        // if (elftool_open(&et, path) < 0)
+        //         return (-1);
 
         if (orig_path != NULL && str_has_prefix(orig_path, "/opt/xdxgpu/lib/x86_64-linux-gnu") == true && 
             str_has_prefix(alt_path, "/usr/lib/x86_64-linux-gnu") == true) {
@@ -153,7 +114,7 @@ select_libraries(struct error *err, void *ptr, const char *root, const char *ori
                 log_infof((orig_path == NULL) ? "%s %s" : "%s %s over %s", "selecting", alt_path, orig_path);
                 rv = true;
         }
-        elftool_close(&et);
+        // elftool_close(&et);
         return (rv);
 }
 
@@ -356,81 +317,9 @@ lookup_binaries(struct error *err, struct dxcore_context* dxcore, struct nvc_dri
         return (0);
 }
 
-// static int
-// lookup_firmwares(struct error *err, struct dxcore_context *dxcore, struct nvc_driver_info *info, const char *root, int32_t flags)
-// {
-//         (void)flags;
-
-//         glob_t gl = {0};
-//         char glob_path[PATH_MAX];
-//         char *firmware_path = NULL;
-//         int rv = -1;
-
-//         if (dxcore->initialized) {
-//                 log_info("skipping path lookup for dxcore");
-//                 goto success;
-//         }
-
-//         // Construct the fully resolved NV_FIRMWARE_PATH_GLOB.
-//         if (xasprintf(err, &firmware_path, NV_FIRMWARE_PATH, info->nvrm_version) < 0) {
-//                 log_errf("error constructing firmware path for %s", info->nvrm_version);
-//                 goto fail;
-//         }
-//         if (path_resolve_full(err, glob_path, root, firmware_path) < 0) {
-//                 log_errf("error resolving firmware path %s", firmware_path);
-//                 goto fail;
-//         }
-//         if (path_append(err, glob_path, NV_FIRMWARE_GLOB) < 0) {
-//                 log_errf("error appending glob to firmware path %s", firmware_path);
-//                 goto fail;
-//         }
-
-//         // Walk each path matched in the fully resolved glob_path and
-//         // include the non-resolved path in our list of mounted files.
-//         if (xglob(err, glob_path, GLOB_ERR, NULL, &gl) < 0) {
-//                 log_errf("error processing firmware path glob of %s", glob_path);
-//                 goto fail;
-//         }
-
-//         if (gl.gl_pathc == 0) {
-//                 log_warnf("missing firmware path %s", glob_path);
-//                 goto success;
-//         }
-
-//         info->nfirmwares = gl.gl_pathc;
-//         info->firmwares = array_new(err, gl.gl_pathc);
-//         if (info->firmwares == NULL) {
-//                 log_err("error creating firmware paths array");
-//                 goto fail;
-//         }
-
-//         for (size_t i = 0; i < gl.gl_pathc; ++i) {
-//                 strcpy(glob_path, firmware_path);
-//                 if (path_append(err, glob_path, basename(gl.gl_pathv[i])) < 0) {
-//                         log_err("error appending firmware filename to unresolved firmware path");
-//                         goto fail;
-//                 }
-//                 log_infof("listing firmware path %s", glob_path);
-//                 if ((info->firmwares[i] = xstrdup(err, glob_path)) == NULL) {
-//                         log_err("error copying firmware path into array");
-//                         goto fail;
-//                 }
-//         }
-
-//         array_pack(info->firmwares, &info->nfirmwares);
-
-// success:
-//         rv = 0;
-// fail:
-//         free(firmware_path);
-//         globfree(&gl);
-//         return (rv);
-// }
-
 static int
 lookup_devices(struct error *err, struct dxcore_context *dxcore, struct nvc_driver_info *info, const char *root, int32_t flags)
 {
-        // struct nvc_device_node uvm, uvm_tools, modeset, nvidiactl, dxg, *node;
         int has_dxg = 0;
         struct nvc_device_node render, *node, dxg;
         int has_render = 0;
@@ -524,14 +413,14 @@ fill_mig_device_info(struct nvc_context *ctx, bool mig_enabled, struct driver_de
                 // Build a path to the MIG caps inside '/proc' associated
                 // with GPU Instance of the MIG device and set it inside
                 // 'info->devices[i]'.
-                if (xasprintf(&ctx->err, &info->devices[i].gi_caps_path, NV_GPU_INST_CAPS_PATH, minor(device->node.id), info->devices[i].gi) < 0)
-                        goto fail;
+                // if (xasprintf(&ctx->err, &info->devices[i].gi_caps_path, NV_GPU_INST_CAPS_PATH, minor(device->node.id), info->devices[i].gi) < 0)
+                //         goto fail;
 
                 // Build a path to the MIG caps inside '/proc' associated
                 // with the Compute Instance of the MIG device and set it
                 // inside 'info->devices[i]'.
-                if (xasprintf(&ctx->err, &info->devices[i].ci_caps_path, NV_COMP_INST_CAPS_PATH, minor(device->node.id), info->devices[i].gi, info->devices[i].ci) < 0)
-                        goto fail;
+                // if (xasprintf(&ctx->err, &info->devices[i].ci_caps_path, NV_COMP_INST_CAPS_PATH, minor(device->node.id), info->devices[i].gi, info->devices[i].ci) < 0)
+                //         goto fail;
 
                 // If we made it to here, update the total count of MIG dervices by 1
                 info->ndevices++;
@@ -768,35 +657,5 @@ nvc_device_info_free(struct nvc_device_info *info)
 int
 nvc_nvcaps_style(void)
 {
-        if (nvidia_get_chardev_major(NV_CAPS_MODULE_NAME) >= 0)
-                return NVC_NVCAPS_STYLE_DEV;
-        if (file_exists(NULL, NV_PROC_DRIVER_CAPS) >= 0)
-                return NVC_NVCAPS_STYLE_PROC;
         return NVC_NVCAPS_STYLE_NONE;
-}
-
-int
-nvc_nvcaps_device_from_proc_path(struct nvc_context *ctx, const char *cap_path, struct nvc_device_node *node)
-{
-        char abs_cap_path[PATH_MAX];
-        char dev_name[PATH_MAX];
-        int major, minor;
-        int rv = -1;
-
-        if (path_join(&ctx->err, abs_cap_path, ctx->cfg.root, cap_path) < 0)
-                goto fail;
-
-        if (nvidia_cap_get_device_file_attrs(abs_cap_path, &major, &minor, dev_name) == 0) {
-                error_set(&ctx->err, "unable to get cap device attributes: %s", cap_path);
-                goto fail;
-        }
-
-        if ((node->path = xstrdup(&ctx->err, dev_name)) == NULL)
-                goto fail;
-        node->id = makedev((unsigned int)major, (unsigned int)minor);
-
-        rv = 0;
-
-fail:
-        return (rv);
 }

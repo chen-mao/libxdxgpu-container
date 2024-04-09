@@ -1,27 +1,3 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- *
- * This file is part of libxdxct-container.
- * If this file is being compiled and dynamically linked against libelf from the
- * elfutils package (usually characterized by the definition of the macro `WITH_LIBELF'),
- * the following license notice covers the use of said library along with the terms from
- * the COPYING and COPYING.LESSER files:
- *
- *  elfutils is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  elfutils is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received copies of the GNU General Public License and
- *  the GNU Lesser General Public License along with this program.  If
- *  not, see <http://www.gnu.org/licenses/>.
- */
-
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>

@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
 #ifndef HEADER_COMMON_H
 #define HEADER_COMMON_H
 
