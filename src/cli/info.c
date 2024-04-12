@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
 #include <sys/sysmacros.h>
 
 #include <alloca.h>

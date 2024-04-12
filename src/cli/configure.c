@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
 #include <err.h>
 #include <stdlib.h>
 
@@ -28,8 +24,8 @@ const struct argp configure_usage = {
                 {"display", 'D', NULL, 0, "Enable display capability", -1},
                 {"ngx", 'n', NULL, 0, "Enable ngx capability", -1},
                 {"compat32", 0x80, NULL, 0, "Enable 32bits compatibility", -1},
-                {"mig-config", 0x81, "ID", 0, "Enable configuration of MIG devices", -1},
-                {"mig-monitor", 0x82, "ID", 0, "Enable monitoring of MIG devices", -1},
+                // {"mig-config", 0x81, "ID", 0, "Enable configuration of MIG devices", -1},
+                // {"mig-monitor", 0x82, "ID", 0, "Enable monitoring of MIG devices", -1},
                 {"no-cgroups", 0x83, NULL, 0, "Don't use cgroup enforcement", -1},
                 {"no-devbind", 0x84, NULL, 0, "Don't bind mount devices", -1},
                 {0},
@@ -129,14 +125,14 @@ configure_parser(int key, char *arg, struct argp_state *state)
                 if (str_join(&err, &ctx->container_flags, "compat32", " ") < 0)
                         goto fatal;
                 break;
-        case 0x81:
-                if (str_join(&err, &ctx->mig_config, arg, ",") < 0)
-                        goto fatal;
-                break;
-        case 0x82:
-                if (str_join(&err, &ctx->mig_monitor, arg, ",") < 0)
-                        goto fatal;
-                break;
+        // case 0x81:
+        //         if (str_join(&err, &ctx->mig_config, arg, ",") < 0)
+        //                 goto fatal;
+        //         break;
+        // case 0x82:
+        //         if (str_join(&err, &ctx->mig_monitor, arg, ",") < 0)
+        //                 goto fatal;
+        //         break;
         case 0x83:
                 if (str_join(&err, &ctx->container_flags, "no-cgroups", " ") < 0)
                         goto fatal;
@@ -233,8 +229,8 @@ configure_command(const struct context *ctx)
         struct nvc_container_config *cnt_cfg = NULL;
         bool eval_reqs = true;
         struct devices devices = {0};
-        struct devices mig_config_devices = {0};
-        struct devices mig_monitor_devices = {0};
+        // struct devices mig_config_devices = {0};
+        // struct devices mig_monitor_devices = {0};
         struct error err = {0};
         int rv = EXIT_FAILURE;
 
@@ -287,25 +283,26 @@ configure_command(const struct context *ctx)
                 goto fail;
         }
 
-        /* Allocate space for selecting GPU devices and MIG devices */
+        // /* Allocate space for selecting GPU devices and MIG devices */
         if (new_devices(&err, dev, &devices) < 0) {
                 warn("memory allocation failed: %s", err.msg);
                 goto fail;
         }
 
-        /* Allocate space for selecting which devices are available for MIG config */
-        if (new_devices(&err, dev, &mig_config_devices) < 0) {
-                warn("memory allocation failed: %s", err.msg);
-                goto fail;
-        }
+        // /* Allocate space for selecting which devices are available for MIG config */
+        // if (new_devices(&err, dev, &mig_config_devices) < 0) {
+        //         warn("memory allocation failed: %s", err.msg);
+        //         goto fail;
+        // }
 
-        /* Allocate space for selecting which devices are available for MIG monitor */
-        if (new_devices(&err, dev, &mig_monitor_devices) < 0) {
-                warn("memory allocation failed: %s", err.msg);
-                goto fail;
-        }
+        // /* Allocate space for selecting which devices are available for MIG monitor */
+        // if (new_devices(&err, dev, &mig_monitor_devices) < 0) {
+        //         warn("memory allocation failed: %s", err.msg);
+        //         goto fail;
+        // }
 
         /* Select the visible GPU devices. */
+        log_infof("dev->ngpus: %ld", dev->ngpus);
         if (dev->ngpus > 0) {
                 if (select_devices(&err, ctx->devices, dev, &devices) < 0) {
                         warnx("device error: %s", err.msg);
@@ -313,17 +310,17 @@ configure_command(const struct context *ctx)
                 }
         }
 
-        /* Select the devices available for MIG config among the visible devices. */
-        if (select_mig_config_devices(&err, ctx->mig_config, &devices, &mig_config_devices) < 0) {
-                warnx("mig-config error: %s", err.msg);
-                goto fail;
-        }
+        // /* Select the devices available for MIG config among the visible devices. */
+        // if (select_mig_config_devices(&err, ctx->mig_config, &devices, &mig_config_devices) < 0) {
+        //         warnx("mig-config error: %s", err.msg);
+        //         goto fail;
+        // }
 
-        /* Select the devices available for MIG monitor among the visible . */
-        if (select_mig_monitor_devices(&err, ctx->mig_monitor, &devices, &mig_monitor_devices) < 0) {
-                warnx("mig-monitor error: %s", err.msg);
-                goto fail;
-        }
+        // /* Select the devices available for MIG monitor among the visible . */
+        // if (select_mig_monitor_devices(&err, ctx->mig_monitor, &devices, &mig_monitor_devices) < 0) {
+        //         warnx("mig-monitor error: %s", err.msg);
+        //         goto fail;
+        // }
 
         /*
          * Check the container requirements.
@@ -374,38 +371,38 @@ configure_command(const struct context *ctx)
                         goto fail;
                 }
         }
-        if (!mig_config_devices.all && !mig_monitor_devices.all) {
-                for (size_t i = 0; i < devices.nmigs; ++i) {
-                        if (libnvc.mig_device_access_caps_mount(nvc, cnt, devices.migs[i]) < 0) {
-                                warnx("mount error: %s", libnvc.error(nvc));
-                                goto fail;
-                        }
-                }
-        }
-        if (mig_config_devices.all && mig_config_devices.ngpus) {
-                if (libnvc.mig_config_global_caps_mount(nvc, cnt) < 0) {
-                        warnx("mount error: %s", libnvc.error(nvc));
-                        goto fail;
-                }
-                for (size_t i = 0; i < mig_config_devices.ngpus; ++i) {
-                        if (libnvc.device_mig_caps_mount(nvc, cnt, mig_config_devices.gpus[i]) < 0) {
-                                warnx("mount error: %s", libnvc.error(nvc));
-                                goto fail;
-                        }
-                }
-        }
-        if (mig_monitor_devices.all && mig_monitor_devices.ngpus) {
-                if (libnvc.mig_monitor_global_caps_mount(nvc, cnt) < 0) {
-                        warnx("mount error: %s", libnvc.error(nvc));
-                        goto fail;
-                }
-                for (size_t i = 0; i < mig_monitor_devices.ngpus; ++i) {
-                        if (libnvc.device_mig_caps_mount(nvc, cnt, mig_monitor_devices.gpus[i]) < 0) {
-                                warnx("mount error: %s", libnvc.error(nvc));
-                                goto fail;
-                        }
-                }
-        }
+        // if (!mig_config_devices.all && !mig_monitor_devices.all) {
+        //         for (size_t i = 0; i < devices.nmigs; ++i) {
+        //                 if (libnvc.mig_device_access_caps_mount(nvc, cnt, devices.migs[i]) < 0) {
+        //                         warnx("mount error: %s", libnvc.error(nvc));
+        //                         goto fail;
+        //                 }
+        //         }
+        // }
+        // if (mig_config_devices.all && mig_config_devices.ngpus) {
+        //         if (libnvc.mig_config_global_caps_mount(nvc, cnt) < 0) {
+        //                 warnx("mount error: %s", libnvc.error(nvc));
+        //                 goto fail;
+        //         }
+        //         for (size_t i = 0; i < mig_config_devices.ngpus; ++i) {
+        //                 if (libnvc.device_mig_caps_mount(nvc, cnt, mig_config_devices.gpus[i]) < 0) {
+        //                         warnx("mount error: %s", libnvc.error(nvc));
+        //                         goto fail;
+        //                 }
+        //         }
+        // }
+        // if (mig_monitor_devices.all && mig_monitor_devices.ngpus) {
+        //         if (libnvc.mig_monitor_global_caps_mount(nvc, cnt) < 0) {
+        //                 warnx("mount error: %s", libnvc.error(nvc));
+        //                 goto fail;
+        //         }
+        //         for (size_t i = 0; i < mig_monitor_devices.ngpus; ++i) {
+        //                 if (libnvc.device_mig_caps_mount(nvc, cnt, mig_monitor_devices.gpus[i]) < 0) {
+        //                         warnx("mount error: %s", libnvc.error(nvc));
+        //                         goto fail;
+        //                 }
+        //         }
+        // }
 
         /* Update the container ldcache. */
         if (perm_set_capabilities(&err, CAP_EFFECTIVE, ecaps[NVC_LDCACHE], ecaps_size(NVC_LDCACHE)) < 0) {

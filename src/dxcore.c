@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
- */
-
 #include <dlfcn.h>
 #include "utils.h"
 #include "dxcore.h"
@@ -11,14 +7,9 @@
 /*
  * List of components we expect to find in the driver store that we need to mount
  */
-static const char * const dxcore_nvidia_driver_store_components[] = {
-        "libcuda.so.1.1",                   /* Core library for cuda support */
-        "libcuda_loader.so",                /* Core library for cuda support on WSL */
-        "libnvidia-ptxjitcompiler.so.1",    /* Core library for PTX Jit support */
-        "libnvidia-ml.so.1",                /* Core library for nvml */
-        "libnvidia-ml_loader.so",           /* Core library for nvml on WSL */
-        "nvidia-smi",                       /* nvidia-smi binary*/
-        "nvcubins.bin",                     /* Binary containing GPU code for cuda */
+static const char * const dxcore_xdxct_driver_store_components[] = {
+        "libxdxct-ml.so.1",                /* Core library for nvml */
+        "xdxsmi",                       /* xdxsmi binary*/
 };
 
 
@@ -202,18 +193,18 @@ static int dxcore_populate_driverstore_library(struct dxcore_adapter *pAdapterIn
 
         pAdapterInfo->driverStoreComponentCount = 0;
 
-        for (index = 0; index < nitems(dxcore_nvidia_driver_store_components); index++) {
-                if (file_exists_at(NULL, pAdapterInfo->pDriverStorePath, dxcore_nvidia_driver_store_components[index])) {
-                        pAdapterInfo->pDriverStoreComponents[pAdapterInfo->driverStoreComponentCount] = dxcore_nvidia_driver_store_components[index];
+        for (index = 0; index < nitems(dxcore_xdxct_driver_store_components); index++) {
+                if (file_exists_at(NULL, pAdapterInfo->pDriverStorePath, dxcore_xdxct_driver_store_components[index])) {
+                        pAdapterInfo->pDriverStoreComponents[pAdapterInfo->driverStoreComponentCount] = dxcore_xdxct_driver_store_components[index];
                         pAdapterInfo->driverStoreComponentCount++;
                 }
                 else {
-                        log_infof("Core Nvidia component %s not found in %s", dxcore_nvidia_driver_store_components[index], pAdapterInfo->pDriverStorePath);
+                        log_infof("Core Xdxct component %s not found in %s", dxcore_xdxct_driver_store_components[index], pAdapterInfo->pDriverStorePath);
                 }
         }
 
         if (pAdapterInfo->driverStoreComponentCount == 0) {
-                log_infof("No Nvidia component found in %s", pAdapterInfo->pDriverStorePath);
+                log_infof("No Xdxct component found in %s", pAdapterInfo->pDriverStorePath);
                 return (-1);
         }
 
@@ -259,7 +250,7 @@ static void dxcore_add_adapter(struct dxcore_context* pCtx, struct dxcore_lib* p
                 pCtx->adapterList[pCtx->adapterCount].wddmVersion = wddmVersion;
 
                 if (dxcore_populate_driverstore_library(&pCtx->adapterList[pCtx->adapterCount])) {
-                        log_err("Failed to query the core Nvidia libraries for the adapter. Skipping it.");
+                        log_err("Failed to query the core Xdxct libraries for the adapter. Skipping it.");
                         return;
                 }
 

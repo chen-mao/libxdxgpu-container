@@ -1,17 +1,3 @@
-# Copyright (c) 2017-2021, NVIDIA CORPORATION.  All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 .PHONY: all tools shared static deps install uninstall dist depsclean mostlyclean clean distclean
 .DEFAULT_GOAL := all
 
@@ -48,10 +34,10 @@ include $(MAKE_DIR)/docker.mk
 
 ##### File definitions #####
 
-DOC_FILES    := $(CURDIR)/NOTICE \
-                $(CURDIR)/LICENSE \
+DOC_FILES    := $(CURDIR)/LICENSE \
                 $(CURDIR)/COPYING \
                 $(CURDIR)/COPYING.LESSER
+# $(CURDIR)/NOTICE
 
 BUILD_DEFS   := $(SRCS_DIR)/build.h
 
@@ -101,13 +87,6 @@ BIN_SCRIPT   = $(SRCS_DIR)/cli/$(BIN_NAME).lds
 ##### Target definitions #####
 
 ARCH    ?= $(call getarch)
-MAJOR   := $(call getdef,NVC_MAJOR,$(LIB_INCS))
-MINOR   := $(call getdef,NVC_MINOR,$(LIB_INCS))
-PATCH   := $(call getdef,NVC_PATCH,$(LIB_INCS))
-# Extract the VERSION and TAG from the version header file. We strip quotes.
-VERSION_STRING := $(subst ",,$(call getdef,NVC_VERSION,$(LIB_INCS)))
-TAG     := $(subst ",,$(call getdef,NVC_TAG,$(LIB_INCS)))
-VERSION := $(MAJOR).$(MINOR).$(PATCH)
 
 ifeq ($(MAJOR),)
 $(error Invalid major version)
@@ -119,9 +98,13 @@ ifeq ($(PATCH),)
 $(error Invalid patch version)
 endif
 
-ifneq ($(VERSION_STRING),$(VERSION)$(if $(TAG),-$(TAG),))
-$(error Version not updated correctly: $(VERSION_STRING) != $(VERSION)$(if $(TAG),-$(TAG),))
-endif
+$(SRCS_DIR)/nvc.h: $(SRCS_DIR)/nvc.h.template
+	cat $< | \
+	sed -e 's/{{NVC_MAJOR}}/$(MAJOR)/g' | \
+	sed -e 's/{{NVC_MINOR}}/$(MINOR)/g' | \
+	sed -e 's/{{NVC_PATCH}}/$(PATCH)/g' | \
+	sed -e 's/{{NVC_TAG}}/$(if $(TAG),"$(TAG)",)/g' | \
+	sed -e 's/{{NVC_VERSION}}/"$(VERSION_STRING)"/g' > $@
 
 BIN_NAME    := xdxct-container-cli
 LIB_NAME    := libxdxct-container
@@ -152,7 +135,6 @@ LDLIBS   := $(LDLIBS)
 LIB_CPPFLAGS       = -DNV_LINUX -isystem $(DEPS_DIR)$(includedir) -include $(BUILD_DEFS)
 LIB_CFLAGS         = -fPIC
 LIB_LDFLAGS        = -L$(DEPS_DIR)$(libdir) -shared -Wl,-soname=$(LIB_SONAME)
-LIB_LDLIBS_STATIC  = -l:libnvidia-modprobe-utils.a
 LIB_LDLIBS_SHARED  = -ldl -lcap
 ifeq ($(WITH_NVCGO), yes)
 LIB_CPPFLAGS       += -DWITH_NVCGO
@@ -209,11 +191,18 @@ $(BUILD_DEFS):
 	@printf '#define BUILD_REVISION "%s"\n' '$(strip $(REVISION))' >>$(BUILD_DEFS)
 	@printf '#define BUILD_PLATFORM "%s"\n' '$(strip $(PLATFORM))' >>$(BUILD_DEFS)
 
+# printf '#define BUILD_DATE     "%s"\n' '$(strip $(DATE))' >$(BUILD_DEFS)
+# printf '#define BUILD_COMPILER "%s " __VERSION__\n' '$(notdir $(COMPILER))' >>$(BUILD_DEFS)
+# printf '#define BUILD_FLAGS    "%s"\n' '$(strip $(CPPFLAGS) $(CFLAGS) $(LDFLAGS))' >>$(BUILD_DEFS)
+# printf '#define BUILD_REVISION "%s"\n' '$(strip $(REVISION))' >>$(BUILD_DEFS)
+# printf '#define BUILD_PLATFORM "%s"\n' '$(strip $(PLATFORM))' >>$(BUILD_DEFS)
+
+
 $(LIB_RPC_SRCS): $(LIB_RPC_SPEC)
 	$(RM) $@
 	cd $(dir $@) && $(RPCGEN) $(RPCGENFLAGS) -C -M -N -o $(notdir $@) $(LIB_RPC_SPEC)
 
-$(LIB_OBJS): %.lo: %.c | deps
+$(LIB_OBJS): %.lo: %.c | deps $(SRCS_DIR)/nvc.h
 	$(CC) $(LIB_CFLAGS) $(LIB_CPPFLAGS) -MMD -MF $*.d -c $(OUTPUT_OPTION) $<
 
 $(BIN_OBJS): %.o: %.c | shared
@@ -257,8 +246,7 @@ shared: $(LIB_SHARED)
 static: $(LIB_STATIC)($(LIB_STATIC_OBJ))
 
 deps: $(LIB_RPC_SRCS) $(BUILD_DEFS)
-	$(MKDIR) -p $(DEPS_DIR)
-	$(MAKE) -f $(MAKE_DIR)/nvidia-modprobe.mk DESTDIR=$(DEPS_DIR) install
+	$(MKDIR) -p $(DEPS_DIR)/src
 ifeq ($(WITH_NVCGO), yes)
 	$(MAKE) -f $(MAKE_DIR)/nvcgo.mk DESTDIR=$(DEPS_DIR) MAJOR=$(MAJOR) VERSION=$(VERSION) LIB_NAME=$(LIBGO_NAME) install
 endif
@@ -316,7 +304,6 @@ dist: install
 
 depsclean:
 	$(RM) $(BUILD_DEFS)
-	-$(MAKE) -f $(MAKE_DIR)/nvidia-modprobe.mk clean
 ifeq ($(WITH_NVCGO), yes)
 	-$(MAKE) -f $(MAKE_DIR)/nvcgo.mk clean
 endif
@@ -335,12 +322,21 @@ clean: mostlyclean depsclean
 distclean: clean
 	$(RM) -r $(DEPS_DIR) $(DIST_DIR) $(DEBUG_DIR)
 	$(RM) $(LIB_RPC_SRCS) $(LIB_STATIC) $(LIB_SHARED) $(BIN_NAME)
+	$(RM) -f $(SRCS_DIR)/nvc.h
 
 deb: DESTDIR:=$(DIST_DIR)/$(LIB_NAME)_$(VERSION)_$(ARCH)
 deb: prefix:=/usr
 deb: libdir:=/usr/lib/@DEB_HOST_MULTIARCH@
+
+PKG_VERS := $(VERSION_STRING)
+PKG_REV := 1
+# --newversion "$(PKG_VERS)-$(PKG_REV)"
 deb: install
 	$(CP) -T $(PKG_DIR)/deb $(DESTDIR)/debian
+	cd $(DESTDIR) && dch --create --package="$(PKG_NAME)" \
+		--newversion "$(PKG_VERS)" \
+            "Release $(PKG_VERS)" && \
+    dch --controlmaint --release ""
 	cd $(DESTDIR) && debuild -eDISTRIB -eSECTION --dpkg-buildpackage-hook='debian/prepare %v' -a$(ARCH) -us -uc -B
 	cd $(DESTDIR) && (yes | debuild clean || yes | debuild -- clean)
 
@@ -351,4 +347,4 @@ rpm: all
 	$(LN) -nsf $(CURDIR) $(DESTDIR)/BUILD
 	$(MKDIR) -p $(DESTDIR)/RPMS && $(LN) -nsf $(DIST_DIR) $(DESTDIR)/RPMS/$(ARCH)
 	cd $(DESTDIR) && rpmbuild --clean --target=$(ARCH) -bb -D"_topdir $(DESTDIR)" -D"_version $(VERSION)" $(and $(TAG),-D"_tag $(TAG)") -D"_major $(MAJOR)" SPECS/*
-	-cd $(DESTDIR) && rpmlint RPMS/*
+# -cd $(DESTDIR) && rpmlint RPMS/*

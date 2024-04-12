@@ -1,18 +1,10 @@
 # libxdxct-container
 
-[![GitHub license](https://img.shields.io/badge/license-New%20BSD-blue.svg?style=flat-square)](https://raw.githubusercontent.com/NVIDIA/libxdxct-container/main/LICENSE)
-[![GitHub release](https://img.shields.io/github/release/NVIDIA/libxdxct-container/all.svg?style=flat-square)](https://github.com/NVIDIA/libxdxct-container/releases)
-[![Package repository](https://img.shields.io/badge/packages-repository-b956e8.svg?style=flat-square)](https://nvidia.github.io/libxdxct-container)
-[![Travis](https://img.shields.io/travis/NVIDIA/libxdxct-container.svg?style=flat-square)](https://travis-ci.org/NVIDIA/libxdxct-container)
-[![Coverity Scan](https://img.shields.io/coverity/scan/12444.svg?style=flat-square)](https://scan.coverity.com/projects/nvidia-libxdxct-container)
-[![LGTM](https://img.shields.io/lgtm/grade/cpp/g/NVIDIA/libxdxct-container.svg?style=flat-square)](https://lgtm.com/projects/g/NVIDIA/libxdxct-container/alerts/)
-
-This repository provides a library and a simple CLI utility to automatically configure GNU/Linux containers leveraging NVIDIA hardware.\
+This repository provides a library and a simple CLI utility to automatically configure GNU/Linux containers leveraging XDXCT hardware.\
 The implementation relies on kernel primitives and is designed to be agnostic of the container runtime.
 
 ## Installing the library
 ### From packages
-Configure the [package repository](https://nvidia.github.io/libxdxct-container/) for your Linux distribution.
 
 Install the packages:
 ```bash
@@ -30,7 +22,7 @@ make {ubuntu18.04, ubuntu16.04, debian10, debian9, centos7, amazonlinux2, opensu
 make docker
 ````
 
-The resulting images have the name `nvidia/libxdxct-container/<os>:<version>`
+The resulting images have the name `xdxct/libxdxct-container/<os>:<version>`
 
 Without Docker:
 ```bash
@@ -42,7 +34,7 @@ DESTDIR=/path/to/root make install prefix=/usr
 
 ## Using the library
 ### Container runtime example
-Refer to the [xdxct-container-runtime](https://github.com/NVIDIA/xdxct-container-runtime) project.
+Refer to the [xdxct-container-runtime].
 
 ### Command line example
 
@@ -53,7 +45,7 @@ sudo unshare --mount --pid --fork
 
 # Setup a rootfs based on Ubuntu 16.04 inside the new namespaces
 curl http://cdimage.ubuntu.com/ubuntu-base/releases/16.04/release/ubuntu-base-16.04.6-base-amd64.tar.gz | tar -C rootfs -xz
-useradd -R $(realpath rootfs) -U -u 1000 -s /bin/bash nvidia
+useradd -R $(realpath rootfs) -U -u 1000 -s /bin/bash xdxct
 mount --bind rootfs rootfs
 mount --make-private rootfs
 cd rootfs
@@ -72,20 +64,6 @@ pivot_root . mnt
 umount -l mnt
 exec chroot --userspec 1000:1000 . env -i bash
 
-# Run nvidia-smi from within the container
-nvidia-smi -L
+# Run xdxsmi from within the container
+xdxsmi
 ```
-
-## Copyright and License
-
-This project is released under the [BSD 3-clause license](https://github.com/NVIDIA/libxdxct-container/blob/main/LICENSE).
-
-Additionally, this project can be dynamically linked with libelf from the elfutils package (https://sourceware.org/elfutils), in which case additional terms apply.\
-Refer to [NOTICE](https://github.com/NVIDIA/libxdxct-container/blob/main/NOTICE) for more information.
-
-## Issues and Contributing
-
-[Checkout the Contributing document!](CONTRIBUTING.md)
-
-* Please let us know by [filing a new issue](https://github.com/NVIDIA/libxdxct-container/issues/new)
-* You can contribute by opening a [pull request](https://help.github.com/articles/using-pull-requests/)

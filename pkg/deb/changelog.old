@@ -1,0 +1,12 @@
+libxdxct-container (1.0.0) UNRELEASED; urgency=medium
+
+  * The init release version.
+
+ -- XDXCT CORPORATION <tools@xdxct.com>  Jul, 24 Apr 2024 17:30:18 +0800
+
+
+libxdxct-container (1.0.0~rc.1-0) experimental; urgency=medium
+
+  * Remove libxdxct-container0 dependency on Ubuntu-based arm64 platforms
+
+ -- XDXCT CORPORATION <tools@xdxct.com>  Mon, 24 Apr 2023 17:30:18 +0200

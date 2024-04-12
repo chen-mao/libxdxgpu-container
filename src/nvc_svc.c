@@ -3,7 +3,7 @@
  * It was generated using rpcgen.
  */
 
-#include "/home/mchen/workspace/libxdxct-container/src/nvc_rpc.h"
+// #include "/home/mchen/workspace/libxdxct-container/src/nvc_rpc.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <rpc/pmap_clnt.h>
@@ -11,6 +11,8 @@
 #include <memory.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+#include "nvc_rpc.h"
 
 #ifndef SIG_PF
 #define SIG_PF void(*)(int)

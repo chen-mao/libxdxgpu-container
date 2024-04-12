@@ -1,7 +1,3 @@
-#
-# Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
-#
-
 include $(MAKE_DIR)/common.mk
 
 ##### BSD make compat #####

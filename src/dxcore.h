@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
- */
-
 #ifndef HEADER_DXCORE_H_
 #define HEADER_DXCORE_H_
 

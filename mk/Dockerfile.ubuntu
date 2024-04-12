@@ -26,6 +26,8 @@ RUN apt-get update --fix-missing && apt-get install -y --no-install-recommends \
         lsb-release \
         m4 \
         pkg-config \
+        vim \
+        nano \
         xz-utils && \
     rm -rf /var/lib/apt/lists/*
 
@@ -54,6 +56,12 @@ ENV WITH_SECCOMP=${WITH_SECCOMP}
 
 ARG REVISION
 ENV REVISION=${REVISION}
+ARG LIB_VERSION
+ENV LIB_VERSION=${LIB_VERSION}
+ARG LIB_TAG
+ENV LIB_TAG=${LIB_TAG}
+ARG LIB_BUILD
+ENV LIB_BUILD=${LIB_BUILD}
 
 RUN make distclean && make -j"$(nproc)"
 

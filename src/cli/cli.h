@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
 #ifndef HEADER_CLI_H
 #define HEADER_CLI_H
 
@@ -71,25 +67,10 @@ struct devices {
 int new_devices(struct error *err, const struct nvc_device_info *dev, struct devices *d);
 void free_devices(struct devices *d);
 
-int print_nvcaps_device_from_proc_file(struct nvc_context *, const char*, const char*);
-int print_all_mig_minor_devices(const struct nvc_device_node *);
-
 int select_devices(
     struct error *err,
     char *devs,
     const struct nvc_device_info *available,
-    struct devices *selected);
-
-int select_mig_config_devices(
-    struct error *err,
-    char *devs,
-    const struct devices *visible,
-    struct devices *selected);
-
-int select_mig_monitor_devices(
-    struct error *err,
-    char *devs,
-    const struct devices *visible,
     struct devices *selected);
 
 extern const struct argp info_usage;

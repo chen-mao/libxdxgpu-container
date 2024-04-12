@@ -1,7 +1,3 @@
-/*
- * Copyright (c) 2017-2018, NVIDIA CORPORATION. All rights reserved.
- */
-
 #include <sys/types.h>
 
 #include <alloca.h>
@@ -20,7 +16,7 @@ static error_t parser(int, char *, struct argp_state *);
 #pragma GCC visibility push(default)
 error_t argp_err_exit_status = EXIT_FAILURE;
 void (*argp_program_version_hook)(FILE *, struct argp_state *) = &print_version;
-const char *argp_program_bug_address = "https://github.com/NVIDIA/libxdxct-container/issues";
+const char *argp_program_bug_address = "https://github.com/chen-mao/libxdxct-container/issues";
 #pragma GCC visibility pop
 
 static struct argp usage = {
@@ -40,7 +36,7 @@ static struct argp usage = {
         },
         parser,
         "COMMAND [ARG...]",
-        "Command line utility for manipulating NVIDIA GPU containers.",
+        "Command line utility for manipulating XDXCT GPU containers.",
         NULL,
         NULL,
         NULL,
