@@ -7,7 +7,7 @@ BuildRequires: make
 %{!?_tag: %define _version_tag %{_version}}
 %{?_tag: %define _version_tag %{_version}~%{_tag}}
 Version: %{_version_tag}
-Release: 1
+Release: %{release}
 Summary: XDXCT container runtime library
 %description
 The xdxct-container library provides an interface to configure GNU/Linux
@@ -24,7 +24,6 @@ The xdxct-container library provides an interface to configure GNU/Linux
 containers leveraging XDXCT hardware. The implementation relies on several
 kernel subsystems and is designed to be agnostic of the container runtime.
 
-This package requires the XDXCT driver (>= 340.29) to be installed separately.
 %post -n %{name}%{_major} -p /sbin/ldconfig
 %postun -n %{name}%{_major} -p /sbin/ldconfig
 %files -n %{name}%{_major}
